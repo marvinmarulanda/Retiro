@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Retiro">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <title>Plan de Retiro</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;background:#f1f5f9;overscroll-behavior:none}
+    ::-webkit-scrollbar{display:none}
+    input[type=number]{-moz-appearance:textfield}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
+    .fade-in{animation:fadeIn .25s ease forwards}
+    .slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}
+    select,input{appearance:none;-webkit-appearance:none}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useCallback,useRef} = React;
+
+// ────────────────────────────────────────────────
+// CONSTANTES DE DISEÑO
+// ────────────────────────────────────────────────
+const C = {
+  bg:'#f1f5f9', white:'#ffffff', card:'#ffffff',
+  border:'#e2e8f0', border2:'#f1f5f9',
+  text:'#0f172a', sub:'#64748b', muted:'#94a3b8',
+  primary:'#1e40af', primaryL:'#dbeafe', primaryM:'#3b82f6',
+  success:'#059669', successL:'#d1fae5',
+  danger:'#dc2626', dangerL:'#fee2e2',
+  warning:'#d97706', warningL:'#fef3c7',
+  nav:'#ffffff', navBorder:'#e2e8f0',
+  font:"'Inter',system-ui,sans-serif",
+  head:"'Sora',system-ui,sans-serif",
+};
+
+// ────────────────────────────────────────────────
+// PROPIEDADES (fuente: Definitivo)
+// ────────────────────────────────────────────────
+const PROPS = [
+  { id:'canario',   name:'Canario',          moneda:'COP', trm:3700, totalUSD:38000,
+    color:'#b45309', colorL:'#fef3c7', defStatus:'Pagado',
+    ingreso:0, comentario:'Pagado Nov 2025',
+    hitos:[
+      {id:'can1',label:'Pago Inicial',    usd:11400, date:'2023-05', seeded:true},
+      {id:'can2',label:'Finalización',    usd:26600, date:'2025-11', seeded:true},
+    ]},
+  { id:'cabana',    name:'Cabaña Trevelin',  moneda:'ARS', trm:1500, totalUSD:110000,
+    color:'#059669', colorL:'#d1fae5', defStatus:'En Curso',
+    ingreso:200, comentario:'Pago progresivo. Genera $200/mes',
+    hitos:[
+      {id:'cab1',label:'Construcción',    usd:69000, date:'2026-01', seeded:true},
+      {id:'cab2',label:'Restante (pago progresivo)', usd:41000, date:null},
+    ]},
+  { id:'indigo',    name:'Indigo',           moneda:'COP', trm:3700, totalUSD:40500,
+    color:'#7c3aed', colorL:'#ede9fe', defStatus:'En Curso',
+    ingreso:180, comentario:'Restante $19.800 cubierto por inquilino',
+    hitos:[
+      {id:'ind1',label:'Cuota Inicial',   usd:12150, date:'2024-12', seeded:true},
+      {id:'ind2',label:'Abono',           usd:8550,  date:'2026-03', seeded:true},
+      {id:'ind3',label:'Restante (inquilino)', usd:19800, date:'2033-11'},
+    ]},
+  { id:'chantilly', name:'Chantilly',        moneda:'COP', trm:3700, totalUSD:32500,
+    color:'#db2777', colorL:'#fce7f3', defStatus:'En Curso',
+    ingreso:155, comentario:'Genera $155/mes tras pago final',
+    hitos:[
+      {id:'cha1',label:'Cuota Inicial',   usd:9750,  date:'2024-12', seeded:true},
+      {id:'cha2',label:'Abono',           usd:6450,  date:'2026-04', seeded:true},
+      {id:'cha3',label:'Finalización',    usd:16300, date:'2026-09'},
+    ]},
+  { id:'casabsas',  name:'Casa Bs As',       moneda:'ARS', trm:1500, totalUSD:200000,
+    color:'#1d4ed8', colorL:'#dbeafe', defStatus:'Sin Iniciar',
+    ingreso:0, comentario:'Vivienda personal. Costo neto -$350/mes',
+    hitos:[
+      {id:'cba1',label:'Cuota Inicial',   usd:60000, date:'2027-10'},
+      {id:'cba2',label:'Adelanto 1',      usd:30000, date:'2030-07'},
+      {id:'cba3',label:'Adelanto 2',      usd:50000, date:'2034-09'},
+      {id:'cba4',label:'Finalización',    usd:60000, date:'2039-03'},
+    ]},
+  { id:'rdm',       name:'Reserva del Mar',  moneda:'COP', trm:3700, totalUSD:185000,
+    color:'#0891b2', colorL:'#cffafe', defStatus:'Sin Iniciar',
+    ingreso:820, comentario:'C.Inicial $55.200 ya en cuotas. Entrega Abr 2028',
+    hitos:[
+      {id:'rdm1',label:'Adelanto',        usd:52000, date:'2028-08'},
+      {id:'rdm2',label:'Adelanto 2',      usd:60000, date:'2036-05'},
+      {id:'rdm3',label:'Finalización',    usd:17800, date:'2039-09'},
+    ]},
+  { id:'bogota1',   name:'Bogotá 1',         moneda:'COP', trm:3700, totalUSD:110000,
+    color:'#ea580c', colorL:'#ffedd5', defStatus:'Sin Iniciar',
+    ingreso:330, comentario:'Entrega 2 años tras inicial. Cuota $460/mes',
+    hitos:[
+      {id:'b1a',label:'Cuota Inicial',    usd:33000, date:'2029-03'},
+      {id:'b1b',label:'Adelanto 1',       usd:30000, date:'2033-01'},
+      {id:'b1c',label:'Adelanto 2',       usd:30000, date:'2037-02'},
+      {id:'b1d',label:'Finalización',     usd:17000, date:'2039-06'},
+    ]},
+  { id:'quincho',   name:'Quincho NQN',      moneda:'ARS', trm:1500, totalUSD:60000,
+    color:'#65a30d', colorL:'#ecfccb', defStatus:'Sin Iniciar',
+    ingreso:500, comentario:'Genera $500/mes al completarse',
+    hitos:[
+      {id:'qnq1',label:'Inicio obra',     usd:25000, date:'2031-01'},
+      {id:'qnq2',label:'Adelanto',        usd:25000, date:'2030-12'},
+      {id:'qnq3',label:'Finalización',    usd:10000, date:'2032-01'},
+    ]},
+  { id:'avicola',   name:'Avícola',          moneda:'COP', trm:3700, totalUSD:70000,
+    color:'#16a34a', colorL:'#dcfce7', defStatus:'Sin Iniciar',
+    ingreso:1200, comentario:'Genera $1.200/mes. Compra total',
+    hitos:[
+      {id:'avi1',label:'Pago Total',      usd:70000, date:'2030-02'},
+    ]},
+  { id:'bsas2',     name:'Bs As 2da',        moneda:'ARS', trm:1500, totalUSD:150000,
+    color:'#9333ea', colorL:'#f3e8ff', defStatus:'Sin Iniciar',
+    ingreso:330, comentario:'Cuota $460/mes',
+    hitos:[
+      {id:'ba2a',label:'Cuota Inicial',   usd:45000, date:'2031-06'},
+      {id:'ba2b',label:'Adelanto 1',      usd:30000, date:'2033-06'},
+      {id:'ba2c',label:'Adelanto 2',      usd:40000, date:'2037-11'},
+      {id:'ba2d',label:'Finalización',    usd:35000, date:'2041-03'},
+    ]},
+  { id:'medellin',  name:'Medellín',         moneda:'COP', trm:3700, totalUSD:110000,
+    color:'#dc2626', colorL:'#fee2e2', defStatus:'Sin Iniciar',
+    ingreso:330, comentario:'Cuota $460/mes',
+    hitos:[
+      {id:'med1',label:'Cuota Inicial',   usd:33000, date:'2032-06'},
+      {id:'med2',label:'Adelanto 1',      usd:30000, date:'2036-01'},
+      {id:'med3',label:'Adelanto 2',      usd:30000, date:'2039-04'},
+      {id:'med4',label:'Finalización',    usd:17000, date:'2040-06'},
+    ]},
+];
+
+// Todos los hitos en orden cronológico (plan)
+const ALL_HITOS = PROPS.flatMap(p =>
+  p.hitos.filter(h => h.date).map(h => ({...h, propId:p.id, propName:p.name, color:p.color, colorL:p.colorL}))
+).sort((a,b) => a.date.localeCompare(b.date));
+
+// Hitos semilla (ya pagados históricos)
+const SEEDED_IDS = new Set(PROPS.flatMap(p => p.hitos.filter(h=>h.seeded).map(h=>h.id)));
+
+// ────────────────────────────────────────────────
+// AHORRO TEÓRICO MENSUAL (fuente: Ahorro por mes col N)
+// Empieza Sep 2026. Regular 3K, Jun+Dic 7.3K, Mar 16.3K
+// ────────────────────────────────────────────────
+function mSav(y,m){
+  if(y<2026||(y===2026&&m<9)) return 0;
+  if(m===3) return 16333;
+  if(m===6||m===12) return 7333;
+  return 3000;
+}
+function theorCumul(toY,toM){
+  let t=0,y=2026,m=9;
+  while(y<toY||(y===toY&&m<=toM)){t+=mSav(y,m);m++;if(m>12){y++;m=1;}}
+  return t;
+}
+
+// ────────────────────────────────────────────────
+// UTILS
+// ────────────────────────────────────────────────
+const KEY='retiro_inmobiliario_v2';
+const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const fUSD=n=>'$'+Math.round(n).toLocaleString('es-AR');
+const fLocal=n=>'$'+Math.round(n).toLocaleString('es-AR');
+const mStr=(y,m)=>`${MES[m-1]} ${y}`;
+function pDate(s){if(!s)return null;const[y,m]=s.split('-').map(Number);return{y,m};}
+function addM(y,m,n){m+=n;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return{y,m};}
+
+const DEF_DATA={trm_ars:1500,trm_cop:3700,savings:[],paid:{},propStatus:{}};
+
+function loadData(){
+  try{
+    const s=localStorage.getItem(KEY);
+    const d=s?{...DEF_DATA,...JSON.parse(s)}:{...DEF_DATA};
+    // Seed historical paid items
+    SEEDED_IDS.forEach(id=>{if(!d.paid[id])d.paid[id]={seeded:true};});
+    // Seed default property statuses
+    PROPS.forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]=p.defStatus;});
+    return d;
+  }catch(e){
+    const d={...DEF_DATA};
+    SEEDED_IDS.forEach(id=>{d.paid[id]={seeded:true};});
+    PROPS.forEach(p=>{d.propStatus[p.id]=p.defStatus;});
+    return d;
+  }
+}
+
+// ────────────────────────────────────────────────
+// MÉTRICAS
+// ────────────────────────────────────────────────
+function computeMetrics(data){
+  const now=new Date(),nY=now.getFullYear(),nM=now.getMonth()+1;
+  const realTotal=data.savings.reduce((s,e)=>s+e.usd,0);
+  const paidAmounts=Object.entries(data.paid)
+    .filter(([id,v])=>!v.seeded&&v.amount_usd)
+    .reduce((s,[,v])=>s+(v.amount_usd||0),0);
+  const realBalance=realTotal-paidAmounts;
+  const thTotal=theorCumul(nY,nM);
+  const savGap=realTotal-thTotal;
+  const paidHitoIds=new Set(Object.keys(data.paid));
+  const nextHito=ALL_HITOS.find(h=>!paidHitoIds.has(h.id));
+  const paidCount=ALL_HITOS.filter(h=>paidHitoIds.has(h.id)).length;
+  const totalHitos=ALL_HITOS.length;
+
+  let nd=null;
+  if(nextHito){
+    const{y:py,m:pm}=pDate(nextHito.date);
+    const planMo=(py-nY)*12+(pm-nM);
+    if(realBalance>=nextHito.usd){
+      nd={months:0,status:'ready',canPay:true,hito:nextHito,reachDate:{y:nY,m:nM}};
+    }else{
+      let bal=realBalance,cy=nY,cm=nM,mo=0;
+      while(bal<nextHito.usd&&mo<480){
+        const{y:ny2,m:nm2}=addM(cy,cm,1);cy=ny2;cm=nm2;
+        bal+=mSav(cy,cm);mo++;
+      }
+      const delay=Math.max(0,mo-Math.max(0,planMo));
+      nd={months:delay,status:delay===0?'ok':delay<=3?'warning':'danger',
+          canPay:false,hito:nextHito,reachDate:addM(nY,nM,mo),monthsNeeded:mo};
+    }
+  }
+
+  // Finish estimate
+  let comp=null;
+  const rem=ALL_HITOS.filter(h=>!paidHitoIds.has(h.id));
+  if(rem.length>0){
+    let bal=realBalance,cy=nY,cm=nM,r=[...rem],it=0;
+    while(r.length>0&&it++<800){
+      const{y:ny2,m:nm2}=addM(cy,cm,1);cy=ny2;cm=nm2;
+      bal+=mSav(cy,cm);
+      while(r.length>0&&bal>=r[0].usd){bal-=r[0].usd;r.shift();}
+    }
+    comp={y:cy,m:cm};
+  }
+
+  let overall='ok';
+  if(savGap<-5000||(nd&&nd.months>3)) overall='danger';
+  else if(savGap<-1000||(nd&&nd.months>0&&nd.months<=3)) overall='warning';
+
+  return{realTotal,paidAmounts,realBalance,thTotal,savGap,paidCount,totalHitos,nextHito,nd,comp,overall,nY,nM,paidHitoIds};
+}
+
+// ────────────────────────────────────────────────
+// COMPONENTES BASE
+// ────────────────────────────────────────────────
+function PageHeader({title,sub,action}){
+  return(
+    <div style={{background:C.white,padding:'16px 16px 12px',borderBottom:`1px solid ${C.border}`,
+      display:'flex',justifyContent:'space-between',alignItems:'flex-end',position:'sticky',top:0,zIndex:10}}>
+      <div>
+        <div style={{fontSize:11,color:C.primary,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',
+          fontFamily:C.font,marginBottom:2}}>Plan de Retiro</div>
+        <div style={{fontFamily:C.head,fontSize:22,color:C.text,fontWeight:700,lineHeight:1.1}}>{title}</div>
+        {sub&&<div style={{fontSize:12,color:C.sub,marginTop:3,fontFamily:C.font}}>{sub}</div>}
+      </div>
+      {action}
+    </div>
+  );
+}
+function Card({children,style={}}){
+  return<div style={{background:C.white,borderRadius:12,padding:'14px',border:`1px solid ${C.border}`,
+    margin:'0 12px 10px',...style}}>{children}</div>;
+}
+function Bar({value,max,color,h=6}){
+  const pct=Math.min(100,Math.max(0,max>0?(value/max)*100:0));
+  return<div style={{height:h,background:C.border,borderRadius:h,overflow:'hidden'}}>
+    <div style={{height:'100%',width:`${pct}%`,background:color,borderRadius:h,transition:'width .4s ease'}}/>
+  </div>;
+}
+function Badge({label,color,bg}){
+  return<span style={{fontSize:11,fontWeight:700,color,background:bg,padding:'3px 8px',
+    borderRadius:20,letterSpacing:.3,fontFamily:C.font,display:'inline-block'}}>{label}</span>;
+}
+function Btn({children,onClick,color=C.primary,fullWidth=false,secondary=false,small=false,disabled=false}){
+  const bg=secondary?C.white:disabled?C.muted:color;
+  const tc=secondary?color:'#fff';
+  const bc=secondary?color:disabled?C.muted:color;
+  return<button onClick={onClick} disabled={disabled}
+    style={{padding:small?'8px 14px':'13px 20px',background:bg,border:`1.5px solid ${bc}`,
+    borderRadius:10,color:tc,fontSize:small?13:15,fontWeight:600,cursor:disabled?'default':'pointer',
+    fontFamily:C.font,width:fullWidth?'100%':'auto',opacity:disabled?.6:1,transition:'opacity .15s'}}>
+    {children}
+  </button>;
+}
+function StatRow({label,value,color=C.text,bold=false}){
+  return<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+    padding:'9px 0',borderBottom:`1px solid ${C.border2}`}}>
+    <span style={{fontSize:13,color:C.sub,fontFamily:C.font}}>{label}</span>
+    <span style={{fontSize:14,fontWeight:bold?700:600,color,fontFamily:C.font}}>{value}</span>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// TAB INICIO
+// ────────────────────────────────────────────────
+function InicioTab({metrics,onAddSaving}){
+  const{realTotal,realBalance,thTotal,savGap,paidCount,totalHitos,nd,comp,overall,nY,nM}=metrics;
+  const ahead=savGap>=0;
+
+  const stConf={
+    ok:{c:C.success,bg:C.successL,icon:'✓',msg:'Al día con el plan'},
+    warning:{c:C.warning,bg:C.warningL,icon:'▲',msg:'Posible retraso próximamente'},
+    danger:{c:C.danger,bg:C.dangerL,icon:'!',msg:'Retrasado respecto al plan'},
+  };
+  const sc=stConf[overall];
+  const PLAN_TOTAL=PROPS.reduce((s,p)=>s+p.totalUSD,0);
+
+  return<div className="fade-in">
+    <PageHeader title="Inicio" sub={`${mStr(nY,nM)} · Actualizado ahora`}/>
+
+    {/* Estado */}
+    <div style={{margin:'12px 12px 0'}}>
+      <div style={{background:sc.bg,border:`1.5px solid ${sc.c}33`,borderRadius:12,padding:'12px 14px',
+        display:'flex',alignItems:'center',gap:12}}>
+        <div style={{width:36,height:36,borderRadius:18,background:sc.c+'22',display:'flex',
+          alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,color:sc.c,flexShrink:0}}>
+          {sc.icon}
+        </div>
+        <div>
+          <div style={{fontWeight:700,color:sc.c,fontSize:15,fontFamily:C.font}}>{sc.msg}</div>
+          <div style={{fontSize:12,color:C.sub,marginTop:1,fontFamily:C.font}}>
+            {ahead?`+${fUSD(savGap)} sobre el teórico acumulado`:`${fUSD(savGap)} bajo el teórico acumulado`}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Ahorro */}
+    <Card style={{marginTop:10}}>
+      <div style={{fontSize:11,color:C.sub,fontWeight:700,letterSpacing:1,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
+        Ahorro Acumulado
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Real ahorrado</div>
+          <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.head,lineHeight:1.1}}>{fUSD(realTotal)}</div>
+        </div>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Teórico a la fecha</div>
+          <div style={{fontSize:24,fontWeight:700,color:ahead?C.success:C.danger,fontFamily:C.head,lineHeight:1.1}}>{fUSD(thTotal)}</div>
+        </div>
+      </div>
+      <StatRow label="Balance disponible (post pagos)" value={fUSD(realBalance)} color={C.primary} bold/>
+      <div style={{marginTop:10}}>
+        <Bar value={realTotal} max={PLAN_TOTAL} color={ahead?C.success:C.warning}/>
+        <div style={{fontSize:11,color:C.sub,marginTop:4,fontFamily:C.font,textAlign:'right'}}>
+          {((realTotal/PLAN_TOTAL)*100).toFixed(1)}% del portfolio total {fUSD(PLAN_TOTAL)}
+        </div>
+      </div>
+    </Card>
+
+    {/* Próximo hito */}
+    {nd&&nd.hito&&(
+      <Card>
+        <div style={{fontSize:11,color:C.sub,fontWeight:700,letterSpacing:1,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
+          Próximo Pago · #{ALL_HITOS.findIndex(h=>h.id===nd.hito.id)+1} de {totalHitos}
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+              <div style={{width:10,height:10,borderRadius:5,background:nd.hito.color,flexShrink:0}}/>
+              <span style={{fontSize:13,color:C.sub,fontFamily:C.font}}>{nd.hito.propName}</span>
+            </div>
+            <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:C.head}}>{nd.hito.label}</div>
+            <div style={{fontSize:12,color:C.sub,marginTop:2,fontFamily:C.font}}>
+              Meta: {(()=>{const d=pDate(nd.hito.date);return mStr(d.y,d.m);})()}
+            </div>
+          </div>
+          <div style={{textAlign:'right',flexShrink:0}}>
+            <div style={{fontSize:22,fontWeight:700,color:C.warning,fontFamily:C.head}}>{fUSD(nd.hito.usd)}</div>
+            <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>USD</div>
+          </div>
+        </div>
+        <div style={{marginBottom:8}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.sub,marginBottom:4,fontFamily:C.font}}>
+            <span>Acumulado para este pago</span>
+            <span style={{fontWeight:600,color:C.text}}>{fUSD(Math.min(realBalance,nd.hito.usd))} / {fUSD(nd.hito.usd)}</span>
+          </div>
+          <Bar value={realBalance} max={nd.hito.usd}
+            color={realBalance>=nd.hito.usd?C.success:realBalance>=nd.hito.usd*.7?C.warning:C.danger}/>
+        </div>
+        {nd.canPay?(
+          <div style={{background:C.successL,borderRadius:8,padding:'9px 12px',fontSize:13,
+            color:C.success,fontWeight:600,fontFamily:C.font}}>
+            ✓ Saldo suficiente — podés realizar este pago ahora
+          </div>
+        ):(
+          <div style={{background:nd.status==='ok'?C.successL:nd.status==='warning'?C.warningL:C.dangerL,
+            borderRadius:8,padding:'9px 12px',fontSize:13,fontFamily:C.font,
+            color:nd.status==='ok'?C.success:nd.status==='warning'?C.warning:C.danger,fontWeight:600}}>
+            {nd.months===0
+              ?`✓ Llegarás en fecha — Saldo listo ~${mStr(nd.reachDate.y,nd.reachDate.m)}`
+              :`▲ Delay estimado: ${nd.months} meses — Posible pago ${mStr(nd.reachDate.y,nd.reachDate.m)}`
+            }
+          </div>
+        )}
+      </Card>
+    )}
+
+    {/* Avance + cierre */}
+    <Card>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontWeight:700,letterSpacing:1,textTransform:'uppercase',fontFamily:C.font}}>
+            Avance del Plan
+          </div>
+          <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:2}}>{paidCount} de {totalHitos} hitos pagados</div>
+        </div>
+        {comp&&<div style={{textAlign:'right'}}>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Fin estimado</div>
+          <div style={{fontSize:16,fontWeight:700,color:C.primary,fontFamily:C.head,marginTop:1}}>{mStr(comp.y,comp.m)}</div>
+        </div>}
+      </div>
+      <Bar value={paidCount} max={totalHitos} color={C.primary} h={8}/>
+    </Card>
+
+    <div style={{padding:'4px 12px 8px'}}>
+      <Btn onClick={onAddSaving} fullWidth>+ Registrar Ahorro del Mes</Btn>
+    </div>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// TAB AHORROS
+// ────────────────────────────────────────────────
+function AhorrosTab({data,metrics,onAdd,onEdit,onDelete}){
+  const sorted=[...data.savings].sort((a,b)=>b.year-a.year||(b.month-a.month));
+  const avg=sorted.length>0?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
+
+  return<div className="fade-in">
+    <PageHeader title="Ahorros"
+      sub="Registro mensual · ARS y COP"
+      action={<Btn onClick={onAdd} small>+ Agregar</Btn>}/>
+
+    <Card style={{marginTop:12}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center'}}>
+        {[
+          {l:'Total USD',v:fUSD(metrics.realTotal),c:C.primary},
+          {l:'Meses',v:data.savings.length,c:C.text},
+          {l:'Prom/mes',v:fUSD(avg),c:C.warning},
+        ].map(({l,v,c})=>(
+          <div key={l}>
+            <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{l}</div>
+            <div style={{fontSize:16,fontWeight:700,color:c,fontFamily:C.head,marginTop:2}}>{v}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+
+    {sorted.length===0?(<div style={{textAlign:'center',padding:'48px 20px'}}>
+      <div style={{fontSize:40,marginBottom:12}}>💰</div>
+      <div style={{fontSize:15,fontWeight:700,color:C.text,fontFamily:C.head}}>Sin ahorros registrados</div>
+      <div style={{fontSize:13,color:C.sub,marginTop:4,fontFamily:C.font}}>
+        Los ahorros empiezan a contar desde Sep 2026 según el plan
+      </div>
+    </div>):(
+      <div>
+        {sorted.map(s=>{
+          const th=mSav(s.year,s.month);
+          const diff=s.usd-th;
+          const ok=diff>=0;
+          return<div key={s.id} className="fade-in"
+            style={{margin:'0 12px 8px',background:C.white,borderRadius:12,padding:'13px',
+            border:`1px solid ${C.border}`}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+              <div>
+                {s.titulo&&<div style={{fontSize:12,fontWeight:600,color:C.primary,fontFamily:C.font,marginBottom:2}}>{s.titulo}</div>}
+                <div style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:C.head}}>{mStr(s.year,s.month)}</div>
+                <div style={{fontSize:12,color:C.sub,marginTop:2,fontFamily:C.font}}>
+                  {fLocal(s.local)} {s.moneda} · TRM {s.trm.toLocaleString('es-AR')}
+                </div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:20,fontWeight:700,color:ok?C.success:C.danger,fontFamily:C.head}}>{fUSD(s.usd)}</div>
+                <div style={{fontSize:11,color:ok?C.success:C.danger,fontFamily:C.font}}>
+                  {diff>=0?`+${fUSD(diff)}`:`${fUSD(diff)}`} vs teórico
+                </div>
+              </div>
+            </div>
+            <div style={{marginBottom:8}}>
+              <Bar value={s.usd} max={Math.max(s.usd,th)} color={ok?C.success:C.warning}/>
+              <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:3}}>Teórico: {fUSD(th)}</div>
+            </div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <Btn onClick={()=>onEdit(s)} small secondary color={C.primary}>Editar</Btn>
+              <Btn onClick={()=>onDelete(s.id)} small secondary color={C.danger}>Eliminar</Btn>
+            </div>
+          </div>;
+        })}
+      </div>
+    )}
+    <div style={{height:8}}/>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// TAB PROPIEDADES
+// ────────────────────────────────────────────────
+function PropiedadesTab({data,onChangeStatus}){
+  const totalPortfolio=PROPS.reduce((s,p)=>s+p.totalUSD,0);
+  const totalIngresos=PROPS.reduce((s,p)=>s+p.ingreso,0);
+
+  return<div className="fade-in">
+    <PageHeader title="Propiedades" sub={`${PROPS.length} inmuebles · ${fUSD(totalPortfolio)} portfolio`}/>
+
+    <Card style={{marginTop:12}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Portfolio total</div>
+          <div style={{fontSize:20,fontWeight:700,color:C.primary,fontFamily:C.head,marginTop:2}}>{fUSD(totalPortfolio)}</div>
+        </div>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Ingresos futuros/mes</div>
+          <div style={{fontSize:20,fontWeight:700,color:C.success,fontFamily:C.head,marginTop:2}}>{fUSD(totalIngresos)}</div>
+        </div>
+      </div>
+    </Card>
+
+    {PROPS.map(p=>{
+      const status=data.propStatus[p.id]||p.defStatus;
+      const paidHitoIds=new Set(Object.keys(data.paid));
+      const paidUSD=p.hitos.filter(h=>paidHitoIds.has(h.id)).reduce((s,h)=>s+h.usd,0);
+      const remaining=p.totalUSD-paidUSD;
+
+      const statusColors={
+        'Pagado':{c:C.success,bg:C.successL},
+        'En Curso':{c:C.warning,bg:C.warningL},
+        'Sin Iniciar':{c:C.sub,bg:C.border},
+      };
+      const sc=statusColors[status]||statusColors['Sin Iniciar'];
+
+      return<div key={p.id} style={{margin:'0 12px 10px',background:C.white,
+        borderRadius:14,border:`1px solid ${C.border}`,overflow:'hidden'}}>
+        {/* Header con color */}
+        <div style={{background:p.colorL,borderBottom:`3px solid ${p.color}`,padding:'12px 14px',
+          display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,fontFamily:C.head,color:C.text}}>{p.name}</div>
+            <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:2}}>
+              {p.moneda} · {fUSD(p.totalUSD)} total
+            </div>
+          </div>
+          <select value={status}
+            onChange={e=>onChangeStatus(p.id,e.target.value)}
+            style={{background:sc.bg,border:`1.5px solid ${sc.c}55`,color:sc.c,
+              borderRadius:20,padding:'5px 10px',fontSize:12,fontWeight:700,
+              fontFamily:C.font,cursor:'pointer',outline:'none'}}>
+            <option>Pagado</option>
+            <option>En Curso</option>
+            <option>Sin Iniciar</option>
+          </select>
+        </div>
+        {/* Body */}
+        <div style={{padding:'12px 14px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
+            {[
+              {l:'Pagado',v:fUSD(paidUSD),c:C.success},
+              {l:'Pendiente',v:fUSD(remaining),c:remaining>0?C.warning:C.success},
+              {l:'Ingreso/mes',v:p.ingreso>0?`+${fUSD(p.ingreso)}`:'-',c:p.ingreso>0?C.success:C.sub},
+            ].map(({l,v,c})=>(
+              <div key={l} style={{textAlign:'center',background:C.border2,borderRadius:8,padding:'7px 4px'}}>
+                <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>{l}</div>
+                <div style={{fontSize:13,fontWeight:700,color:c,fontFamily:C.head,marginTop:1}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <Bar value={paidUSD} max={p.totalUSD} color={p.color} h={7}/>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:4,marginBottom:8,textAlign:'right'}}>
+            {((paidUSD/p.totalUSD)*100).toFixed(0)}% pagado
+          </div>
+          {/* Hitos */}
+          {p.hitos.filter(h=>h.date||h.seeded||paidHitoIds.has(h.id)).map(h=>{
+            const paid=paidHitoIds.has(h.id);
+            return<div key={h.id}
+              style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+              padding:'7px 0',borderTop:`1px solid ${C.border2}`}}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:14}}>{paid?'✓':'○'}</span>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:paid?C.sub:C.text,
+                    fontFamily:C.font,textDecoration:paid?'line-through':'none'}}>{h.label}</div>
+                  {h.date&&<div style={{fontSize:11,color:C.muted,fontFamily:C.font}}>
+                    {(()=>{const d=pDate(h.date);return mStr(d.y,d.m);})()}
+                  </div>}
+                </div>
+              </div>
+              <span style={{fontSize:13,fontWeight:700,color:paid?C.sub:p.color,fontFamily:C.head}}>
+                {fUSD(h.usd)}
+              </span>
+            </div>;
+          })}
+          {p.comentario&&<div style={{marginTop:8,fontSize:11,color:C.sub,fontFamily:C.font,
+            background:C.border2,borderRadius:6,padding:'6px 8px',lineHeight:1.4}}>
+            💬 {p.comentario}
+          </div>}
+        </div>
+      </div>;
+    })}
+    <div style={{height:8}}/>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// TAB PLAN (todos los hitos)
+// ────────────────────────────────────────────────
+function PlanTab({data,metrics,onMarkPaid,onUnmark}){
+  const{nY,nM,paidHitoIds}=metrics;
+  const[filter,setFilter]=useState('todos');
+
+  const filteredHitos=useMemo(()=>{
+    if(filter==='todos') return ALL_HITOS;
+    if(filter==='pagados') return ALL_HITOS.filter(h=>paidHitoIds.has(h.id));
+    if(filter==='pendientes') return ALL_HITOS.filter(h=>!paidHitoIds.has(h.id));
+    return ALL_HITOS.filter(h=>h.propId===filter);
+  },[filter,paidHitoIds]);
+
+  const totalPend=ALL_HITOS.filter(h=>!paidHitoIds.has(h.id)).reduce((s,h)=>s+h.usd,0);
+
+  return<div className="fade-in">
+    <PageHeader title="Plan de Pagos"
+      sub={`${paidHitoIds.size} pagados · ${fUSD(totalPend)} pendiente`}/>
+
+    {/* Filtro */}
+    <div style={{padding:'10px 12px 4px',overflowX:'auto',display:'flex',gap:6,WebkitOverflowScrolling:'touch'}}>
+      {[
+        {k:'todos',l:'Todos'},
+        {k:'pagados',l:'Pagados'},
+        {k:'pendientes',l:'Pendientes'},
+        ...PROPS.map(p=>({k:p.id,l:p.name,color:p.color}))
+      ].map(f=>(
+        <button key={f.k} onClick={()=>setFilter(f.k)}
+          style={{padding:'6px 12px',borderRadius:20,border:`1.5px solid ${filter===f.k?(f.color||C.primary):C.border}`,
+          background:filter===f.k?(f.color||C.primary):C.white,
+          color:filter===f.k?'#fff':C.sub,fontSize:12,fontWeight:600,cursor:'pointer',
+          fontFamily:C.font,whiteSpace:'nowrap',flexShrink:0}}>
+          {f.l}
+        </button>
+      ))}
+    </div>
+
+    <div style={{paddingTop:8,paddingBottom:8}}>
+      {filteredHitos.map((h,i)=>{
+        const paid=paidHitoIds.has(h.id);
+        const{y:py,m:pm}=pDate(h.date);
+        const isNext=!paid&&ALL_HITOS.find(x=>!paidHitoIds.has(x.id))?.id===h.id;
+        const isOver=!paid&&(py<nY||(py===nY&&pm<nM));
+        const seeded=data.paid[h.id]?.seeded;
+
+        return<div key={h.id} className="fade-in"
+          style={{margin:'0 12px 8px',background:C.white,borderRadius:12,
+          border:`1.5px solid ${paid?h.color+'40':isNext?h.color:C.border}`,
+          opacity:paid&&seeded?0.65:1}}>
+          <div style={{padding:'12px 14px'}}>
+            {/* Top strip */}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <div style={{flex:1,marginRight:8}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4,flexWrap:'wrap'}}>
+                  <div style={{width:8,height:8,borderRadius:4,background:h.color,flexShrink:0}}/>
+                  <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
+                  {paid&&<Badge label={seeded?'Ya pagado':'Pagado'} color={C.success} bg={C.successL}/>}
+                  {isNext&&!paid&&<Badge label="Próximo" color={C.primary} bg={C.primaryL}/>}
+                  {isOver&&!paid&&<Badge label="Vencido" color={C.danger} bg={C.dangerL}/>}
+                </div>
+                <div style={{fontSize:16,fontWeight:700,color:paid?C.sub:C.text,fontFamily:C.head,
+                  textDecoration:paid?'line-through':'none'}}>{h.label}</div>
+                <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:2}}>
+                  {mStr(py,pm)}
+                  {paid&&data.paid[h.id]?.date&&!seeded&&
+                    <span> · Pagado: {data.paid[h.id].date}</span>}
+                </div>
+              </div>
+              <div style={{textAlign:'right',flexShrink:0}}>
+                <div style={{fontSize:20,fontWeight:700,
+                  color:paid?C.success:isNext?h.color:C.text,fontFamily:C.head}}>{fUSD(h.usd)}</div>
+                {paid&&data.paid[h.id]?.amount_usd&&!seeded&&
+                  data.paid[h.id].amount_usd!==h.usd&&(
+                  <div style={{fontSize:11,color:C.sub}}>Real: {fUSD(data.paid[h.id].amount_usd)}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Acciones */}
+            {!paid&&(isNext||isOver)&&(
+              <button onClick={()=>onMarkPaid(h)}
+                style={{marginTop:10,width:'100%',padding:'9px',background:h.color,
+                border:'none',borderRadius:8,color:'#fff',fontSize:13,fontWeight:700,
+                cursor:'pointer',fontFamily:C.font}}>
+                ✓ Marcar como Pagado
+              </button>
+            )}
+            {paid&&!seeded&&(
+              <button onClick={()=>onUnmark(h.id)}
+                style={{marginTop:8,padding:'6px 12px',background:'transparent',
+                border:`1px solid ${C.border}`,borderRadius:7,color:C.sub,
+                fontSize:12,cursor:'pointer',fontFamily:C.font,float:'right'}}>
+                Deshacer
+              </button>
+            )}
+          </div>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// TAB PROYECCIÓN
+// ────────────────────────────────────────────────
+function ProyeccionTab({data,metrics}){
+  const{realTotal,thTotal,savGap,comp,nY,nM}=metrics;
+  const paidHitoIds=metrics.paidHitoIds;
+
+  // Build chart data
+  const chartPts=useMemo(()=>{
+    const pts=[];
+    let tC=0,rC=0;
+    const now=new Date();
+    for(let y=2026;y<=2041;y++){
+      for(let m=(y===2026?9:1);m<=12;m++){
+        tC+=mSav(y,m);
+        const e=data.savings.find(s=>s.year===y&&s.month===m);
+        if(e) rC+=e.usd;
+        const isReal=(y<nY||(y===nY&&m<=nM));
+        pts.push({y,m,tC,rC:isReal?rC:null});
+      }
+    }
+    return pts;
+  },[data,nY,nM]);
+
+  const maxV=Math.max(...chartPts.map(p=>p.tC));
+  const W=900,H=180,ML=38,MB=20,MT=8,MR=8;
+  const PW=W-ML-MR,PH=H-MB-MT;
+  const xOf=(y,m)=>ML+((y-2026)*12+(m-9))*(PW/((2041-2026)*12+4));
+  const yOf=v=>MT+PH-(v/maxV)*PH;
+
+  const tPath=chartPts.map((p,i)=>`${i===0?'M':'L'}${xOf(p.y,p.m).toFixed(1)},${yOf(p.tC).toFixed(1)}`).join(' ');
+  const rPts=chartPts.filter(p=>p.rC!=null);
+  const rPath=rPts.map((p,i)=>`${i===0?'M':'L'}${xOf(p.y,p.m).toFixed(1)},${yOf(p.rC).toFixed(1)}`).join(' ');
+  const years=[2026,2028,2030,2032,2034,2036,2038,2040];
+
+  const compDelay=comp?((comp.y-2039)*12+(comp.m-6)):0;
+
+  return<div className="fade-in">
+    <PageHeader title="Proyección" sub="Ahorro real vs teórico"/>
+
+    <Card style={{marginTop:12,padding:'14px 0 8px'}}>
+      <div style={{padding:'0 14px 8px',fontSize:11,color:C.sub,fontWeight:700,
+        letterSpacing:1,textTransform:'uppercase',fontFamily:C.font}}>Curva acumulada USD</div>
+      <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
+        <svg width={W} height={H+4} style={{display:'block'}}>
+          {[0,.25,.5,.75,1].map(f=>{
+            const v=maxV*f,y2=yOf(v);
+            return<g key={f}>
+              <line x1={ML} y1={y2} x2={W-MR} y2={y2} stroke={C.border} strokeWidth={1}/>
+              <text x={ML-3} y={y2+4} fill={C.sub} fontSize={8} textAnchor="end" fontFamily="Inter">
+                {v>=1000?`${Math.round(v/1000)}K`:'0'}
+              </text>
+            </g>;
+          })}
+          {years.map(yr=>{
+            const x=xOf(yr,1);
+            return<g key={yr}>
+              <line x1={x} y1={MT} x2={x} y2={MT+PH} stroke={C.border2} strokeWidth={1}/>
+              <text x={x} y={H} fill={C.sub} fontSize={9} textAnchor="middle" fontFamily="Inter">{yr}</text>
+            </g>;
+          })}
+          {/* Payment markers */}
+          {ALL_HITOS.filter(h=>!paidHitoIds.has(h.id)).slice(0,15).map(h=>{
+            const d=pDate(h.date);
+            if(!d||d.y>2041) return null;
+            const x=xOf(d.y,d.m);
+            return<line key={h.id} x1={x} y1={MT} x2={x} y2={MT+PH}
+              stroke={C.warning} strokeWidth={1} strokeDasharray="3,3" opacity={.4}/>;
+          })}
+          <path d={tPath} fill="none" stroke={C.muted} strokeWidth={1.5} strokeDasharray="5,3"/>
+          {rPath&&<path d={rPath} fill="none" stroke={C.success} strokeWidth={2.5}/>}
+          {rPts.map(p=>(
+            <circle key={`${p.y}-${p.m}`} cx={xOf(p.y,p.m)} cy={yOf(p.rC)} r={3}
+              fill={C.success} stroke={C.white} strokeWidth={1.5}/>
+          ))}
+        </svg>
+      </div>
+      <div style={{display:'flex',gap:14,padding:'4px 14px',flexWrap:'wrap'}}>
+        {[
+          {c:C.muted,dash:true,l:'Teórico'},
+          {c:C.success,dash:false,l:'Real'},
+          {c:C.warning,dash:true,l:'Pagos pendientes'},
+        ].map(({c,dash,l})=>(
+          <div key={l} style={{display:'flex',alignItems:'center',gap:5}}>
+            <svg width={20} height={10}><line x1={0} y1={5} x2={20} y2={5}
+              stroke={c} strokeWidth={dash?1.5:2.5} strokeDasharray={dash?'4,3':undefined}/></svg>
+            <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{l}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+
+    <Card>
+      <div style={{fontSize:11,color:C.sub,fontWeight:700,letterSpacing:1,textTransform:'uppercase',
+        marginBottom:8,fontFamily:C.font}}>Métricas del Plan</div>
+      {[
+        {l:'Ahorrado real',v:fUSD(realTotal),c:C.success,b:true},
+        {l:'Teórico a la fecha',v:fUSD(thTotal),c:C.sub},
+        {l:'Diferencia acum.',v:(savGap>=0?'+':'')+fUSD(savGap),c:savGap>=0?C.success:C.danger,b:true},
+        {l:'Portfolio total',v:fUSD(PROPS.reduce((s,p)=>s+p.totalUSD,0)),c:C.text},
+        {l:'Fin del plan (base)',v:'Jun 2039',c:C.sub},
+        {l:'Fin estimado real',v:comp?mStr(comp.y,comp.m):'—',c:compDelay>0?C.warning:C.success},
+        {l:'Delay acumulado',v:compDelay>0?`+${compDelay} meses`:compDelay<0?`${Math.abs(compDelay)}m adelantado`:'Sin delay',
+          c:compDelay>0?C.warning:C.success,b:true},
+      ].map(({l,v,c,b})=><StatRow key={l} label={l} value={v} color={c} bold={b}/>)}
+    </Card>
+    <div style={{height:8}}/>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// MODALES
+// ────────────────────────────────────────────────
+function Overlay({children,onClose}){
+  return<div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.5)',zIndex:200,
+    display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+    <div onClick={e=>e.stopPropagation()} className="slide-up"
+      style={{background:C.white,borderRadius:'20px 20px 0 0',padding:'20px 20px',
+      width:'100%',maxWidth:480,maxHeight:'90vh',overflowY:'auto',
+      paddingBottom:`calc(20px + env(safe-area-inset-bottom))`}}>
+      {children}
+    </div>
+  </div>;
+}
+function MHead({title,onClose}){
+  return<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
+    <div style={{fontFamily:C.head,fontSize:19,fontWeight:700,color:C.text}}>{title}</div>
+    <button onClick={onClose} style={{background:C.border2,border:'none',borderRadius:16,width:30,height:30,
+      cursor:'pointer',fontSize:16,color:C.sub,fontFamily:C.font}}>✕</button>
+  </div>;
+}
+function Field({label,children,sub}){
+  return<div style={{marginBottom:14}}>
+    <label style={{display:'block',fontSize:11,color:C.sub,fontWeight:700,textTransform:'uppercase',
+      letterSpacing:.7,marginBottom:6,fontFamily:C.font}}>{label}</label>
+    {children}
+    {sub&&<div style={{fontSize:11,color:C.muted,fontFamily:C.font,marginTop:3}}>{sub}</div>}
+  </div>;
+}
+const inputStyle={width:'100%',padding:'11px 12px',background:C.border2,border:`1.5px solid ${C.border}`,
+  borderRadius:9,color:C.text,fontSize:15,fontFamily:"'Inter',system-ui",outline:'none'};
+const selStyle={...inputStyle,cursor:'pointer'};
+
+function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
+  const local=parseFloat(String(form.local||'').replace(/[.,\s]/g,''))||0;
+  const trm=parseFloat(form.trm)||1500;
+  const usd=trm>0?local/trm:0;
+  const th=form.year&&form.month?mSav(parseInt(form.year),parseInt(form.month)):0;
+  const diff=usd-th;
+
+  return<Overlay onClose={onClose}>
+    <MHead title={isEdit?'Editar Ahorro':'Registrar Ahorro'} onClose={onClose}/>
+
+    <Field label="Título (opcional)">
+      <input type="text" value={form.titulo||''} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))}
+        placeholder="Ej: Sueldo, Prima, Bono..." style={inputStyle}/>
+    </Field>
+
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <Field label="Año">
+        <select value={form.year} onChange={e=>setForm(f=>({...f,year:e.target.value}))} style={selStyle}>
+          <option value="">Año</option>
+          {Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}
+        </select>
+      </Field>
+      <Field label="Mes">
+        <select value={form.month} onChange={e=>setForm(f=>({...f,month:e.target.value}))} style={selStyle}>
+          <option value="">Mes</option>
+          {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((n,i)=>(
+            <option key={i+1} value={i+1}>{n}</option>
+          ))}
+        </select>
+      </Field>
+    </div>
+
+    <Field label="Moneda">
+      <select value={form.moneda||'ARS'} onChange={e=>setForm(f=>({...f,moneda:e.target.value,
+        trm:e.target.value==='ARS'?String(data.trm_ars):String(data.trm_cop)}))
+      } style={selStyle}>
+        <option value="ARS">Pesos Argentinos (ARS)</option>
+        <option value="COP">Pesos Colombianos (COP)</option>
+      </select>
+    </Field>
+
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <Field label={`Monto (${form.moneda||'ARS'})`}>
+        <input type="number" value={form.local||''} onChange={e=>setForm(f=>({...f,local:e.target.value}))}
+          placeholder="0" style={inputStyle}/>
+      </Field>
+      <Field label="TRM">
+        <input type="number" value={form.trm||''} onChange={e=>setForm(f=>({...f,trm:e.target.value}))}
+          placeholder={form.moneda==='COP'?String(data.trm_cop):String(data.trm_ars)} style={inputStyle}/>
+      </Field>
+    </div>
+
+    {usd>0&&<div style={{background:C.border2,borderRadius:10,padding:'12px',marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{fontSize:13,color:C.sub,fontFamily:C.font}}>Equivalente USD</span>
+        <span style={{fontSize:20,fontWeight:700,color:C.primary,fontFamily:C.head}}>{fUSD(usd)}</span>
+      </div>
+      {th>0&&<div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`,
+        display:'flex',justifyContent:'space-between',fontSize:13,fontFamily:C.font}}>
+        <span style={{color:C.sub}}>Teórico del mes</span>
+        <span style={{fontWeight:600,color:diff>=0?C.success:C.danger}}>
+          {fUSD(th)} · {diff>=0?'+':''}{fUSD(diff)}
+        </span>
+      </div>}
+    </div>}
+
+    <Btn onClick={onSave} fullWidth disabled={!form.year||!form.month||!form.local}>
+      {isEdit?'Actualizar Ahorro':'Guardar Ahorro'}
+    </Btn>
+  </Overlay>;
+}
+
+function PaidModal({form,setForm,hito,onSave,onClose}){
+  const propColor=PROPS.find(p=>p.id===hito?.propId)?.color||C.primary;
+  return<Overlay onClose={onClose}>
+    <MHead title="Registrar Pago" onClose={onClose}/>
+    {hito&&<>
+      <div style={{background:hito.colorL,border:`1.5px solid ${hito.color}44`,borderRadius:10,
+        padding:'12px',marginBottom:14}}>
+        <div style={{fontSize:12,color:C.sub,fontFamily:C.font}}>{hito.propName}</div>
+        <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:C.head,marginTop:2}}>{hito.label}</div>
+        <div style={{fontSize:15,fontWeight:700,color:propColor,fontFamily:C.head,marginTop:4}}>
+          {fUSD(hito.usd)} USD (plan)
+        </div>
+      </div>
+      <Field label="Monto pagado (USD)">
+        <input type="number" value={form.amount||''} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}
+          placeholder={String(hito.usd)} style={inputStyle}/>
+      </Field>
+      <Field label="Fecha del pago (AAAA-MM)">
+        <input type="text" value={form.date||''} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+          placeholder="2026-09" style={inputStyle}/>
+      </Field>
+      <Btn onClick={onSave} fullWidth color={C.success}>✓ Confirmar Pago</Btn>
+    </>}
+  </Overlay>;
+}
+
+function ConfirmModal({msg,onConfirm,onCancel}){
+  return<div onClick={onCancel} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.5)',zIndex:300,
+    display:'flex',alignItems:'center',justifyContent:'center',padding:'0 20px'}}>
+    <div onClick={e=>e.stopPropagation()} className="fade-in"
+      style={{background:C.white,borderRadius:16,padding:22,maxWidth:340,width:'100%',
+      border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:15,color:C.text,marginBottom:18,lineHeight:1.5,fontFamily:C.font}}>{msg}</div>
+      <div style={{display:'flex',gap:10}}>
+        <Btn onClick={onCancel} secondary color={C.sub} fullWidth>Cancelar</Btn>
+        <Btn onClick={onConfirm} color={C.danger} fullWidth>Eliminar</Btn>
+      </div>
+    </div>
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// NAV
+// ────────────────────────────────────────────────
+function BottomNav({tab,setTab}){
+  const tabs=[
+    {id:'inicio',icon:'🏠',l:'Inicio'},
+    {id:'ahorros',icon:'💰',l:'Ahorros'},
+    {id:'propiedades',icon:'🏢',l:'Propiedades'},
+    {id:'plan',icon:'📋',l:'Plan'},
+    {id:'proyeccion',icon:'📈',l:'Proyección'},
+  ];
+  return<div style={{position:'fixed',bottom:0,left:0,right:0,maxWidth:480,margin:'0 auto',
+    background:C.nav,borderTop:`1px solid ${C.navBorder}`,display:'flex',zIndex:100,
+    paddingBottom:'env(safe-area-inset-bottom)'}}>
+    {tabs.map(t=>(
+      <button key={t.id} onClick={()=>setTab(t.id)}
+        style={{flex:1,padding:'9px 0 7px',border:'none',background:'none',cursor:'pointer',
+        display:'flex',flexDirection:'column',alignItems:'center',gap:1,
+        color:tab===t.id?C.primary:C.muted,fontFamily:C.font}}>
+        <span style={{fontSize:18}}>{t.icon}</span>
+        <span style={{fontSize:9,fontWeight:tab===t.id?700:400,letterSpacing:.1}}>{t.l}</span>
+        {tab===t.id&&<div style={{width:4,height:3,borderRadius:2,background:C.primary}}/>}
+      </button>
+    ))}
+  </div>;
+}
+
+// ────────────────────────────────────────────────
+// APP
+// ────────────────────────────────────────────────
+function App(){
+  const[tab,setTab]=useState('inicio');
+  const[data,setData]=useState(loadData);
+  const[modal,setModal]=useState(null);
+  const[savForm,setSavForm]=useState({});
+  const[paidForm,setPaidForm]=useState({});
+  const[selHito,setSelHito]=useState(null);
+  const[confirmId,setConfirmId]=useState(null);
+  const[editSav,setEditSav]=useState(null);
+
+  useEffect(()=>{
+    try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}
+  },[data]);
+
+  const metrics=useMemo(()=>computeMetrics(data),[data]);
+
+  const openAdd=useCallback(()=>{
+    const now=new Date();
+    setSavForm({year:String(now.getFullYear()),month:String(now.getMonth()+1),
+      local:'',moneda:'ARS',trm:String(data.trm_ars),titulo:''});
+    setEditSav(null);
+    setModal('saving');
+  },[data.trm_ars]);
+
+  const openEdit=useCallback(s=>{
+    setSavForm({year:String(s.year),month:String(s.month),local:String(s.local),
+      moneda:s.moneda||'ARS',trm:String(s.trm),titulo:s.titulo||''});
+    setEditSav(s);
+    setModal('saving');
+  },[]);
+
+  const saveSaving=useCallback(()=>{
+    const year=parseInt(savForm.year),month=parseInt(savForm.month);
+    const local=parseFloat(String(savForm.local||'').replace(/[.,\s]/g,''))||0;
+    const trm=parseFloat(savForm.trm)||1500;
+    if(!year||!month||!local) return;
+    const usd=local/trm;
+    const entry={id:editSav?.id||`s${Date.now()}`,year,month,local,trm,usd,
+      moneda:savForm.moneda||'ARS',titulo:savForm.titulo||''};
+    setData(d=>{
+      let newSav;
+      if(editSav){
+        newSav=d.savings.map(s=>s.id===editSav.id?entry:s);
+      }else{
+        // Check if same month exists - accumulate
+        const existing=d.savings.find(s=>s.year===year&&s.month===month&&s.id!==editSav?.id);
+        if(existing){
+          // Add new entry with different ID
+          newSav=[...d.savings,entry];
+        }else{
+          newSav=[...d.savings,entry];
+        }
+      }
+      return{...d,savings:newSav};
+    });
+    // Update default TRM
+    setData(d=>({...d,[savForm.moneda==='COP'?'trm_cop':'trm_ars']:parseFloat(savForm.trm)||d[savForm.moneda==='COP'?'trm_cop':'trm_ars']}));
+    setModal(null);
+  },[savForm,editSav]);
+
+  const openMarkPaid=useCallback(h=>{
+    const now=new Date();
+    const yy=now.getFullYear(),mm=String(now.getMonth()+1).padStart(2,'0');
+    setSelHito(h);
+    setPaidForm({amount:String(h.usd),date:`${yy}-${mm}`});
+    setModal('paid');
+  },[]);
+
+  const savePaid=useCallback(()=>{
+    const amount=parseFloat(paidForm.amount)||0;
+    if(!amount||!paidForm.date) return;
+    setData(d=>({...d,paid:{...d.paid,[selHito.id]:{date:paidForm.date,amount_usd:amount}}}));
+    setModal(null);
+  },[paidForm,selHito]);
+
+  const unmarkPaid=useCallback(id=>{
+    if(data.paid[id]?.seeded) return; // can't unmark seeded
+    setData(d=>{const p={...d.paid};delete p[id];return{...d,paid:p};});
+  },[data.paid]);
+
+  const changeStatus=useCallback((propId,status)=>{
+    setData(d=>({...d,propStatus:{...d.propStatus,[propId]:status}}));
+  },[]);
+
+  const metricsWithPaid=useMemo(()=>({...metrics,paidHitoIds:new Set(Object.keys(data.paid))}),
+    [metrics,data.paid]);
+
+  return<div style={{maxWidth:480,margin:'0 auto',minHeight:'100svh',background:C.bg,
+    fontFamily:C.font,color:C.text,paddingBottom:75,overflowX:'hidden'}}>
+
+    {tab==='inicio'&&<InicioTab metrics={metricsWithPaid} onAddSaving={openAdd}/>}
+    {tab==='ahorros'&&<AhorrosTab data={data} metrics={metricsWithPaid}
+      onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmId(id)}/>}
+    {tab==='propiedades'&&<PropiedadesTab data={data} onChangeStatus={changeStatus}/>}
+    {tab==='plan'&&<PlanTab data={data} metrics={metricsWithPaid}
+      onMarkPaid={openMarkPaid} onUnmark={unmarkPaid}/>}
+    {tab==='proyeccion'&&<ProyeccionTab data={data} metrics={metricsWithPaid}/>}
+
+    {modal==='saving'&&<SavingModal form={savForm} setForm={setSavForm} data={data}
+      onSave={saveSaving} onClose={()=>setModal(null)} isEdit={!!editSav}/>}
+    {modal==='paid'&&selHito&&<PaidModal form={paidForm} setForm={setPaidForm}
+      hito={selHito} onSave={savePaid} onClose={()=>setModal(null)}/>}
+    {confirmId&&<ConfirmModal msg="¿Eliminar este registro? No se puede deshacer."
+      onConfirm={()=>{setData(d=>({...d,savings:d.savings.filter(s=>s.id!==confirmId)}));setConfirmId(null);}}
+      onCancel={()=>setConfirmId(null)}/>}
+
+    <BottomNav tab={tab} setTab={setTab}/>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
