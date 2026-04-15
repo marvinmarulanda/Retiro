@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,11 +13,16 @@
   <title>Plan de Retiro</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;background:#f1f5f9;overscroll-behavior:none}
+    html{height:100%;background:#f1f5f9}
+    body{height:100%;background:#f1f5f9;overscroll-behavior:none;
+      padding-top:env(safe-area-inset-top);
+      padding-left:env(safe-area-inset-left);
+      padding-right:env(safe-area-inset-right)}
     ::-webkit-scrollbar{display:none}
     input[type=number]{-moz-appearance:textfield}
-    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
     .fade-in{animation:fadeIn .22s ease forwards}
     .slide-up{animation:slideUp .28s cubic-bezier(.16,1,.3,1) forwards}
@@ -32,7 +37,7 @@
 <script type="text/babel">
 const {useState,useEffect,useMemo,useCallback} = React;
 
-// ─── DISEÑO ──────────────────────────────────────
+// ─── DISEÑO ──────────────────────────────────────────
 const C = {
   bg:'#f1f5f9', white:'#ffffff', border:'#e2e8f0', border2:'#f8fafc',
   text:'#0f172a', sub:'#64748b', muted:'#94a3b8',
@@ -43,152 +48,148 @@ const C = {
   font:"'Inter',system-ui,sans-serif",
   head:"'Sora',system-ui,sans-serif",
 };
-const inputSt = {width:'100%',padding:'11px 12px',background:'#f8fafc',
+const iSt = {width:'100%',padding:'11px 12px',background:'#f8fafc',
   border:`1.5px solid ${C.border}`,borderRadius:9,color:C.text,
   fontSize:15,fontFamily:"'Inter',system-ui",outline:'none'};
 
-// ─── PROPIEDADES BASE (Definitivo) ───────────────
+// ─── PROPIEDADES BASE (fuente: Definitivo) ──────────
 const PROPS_BASE = [
-  {id:'canario',  name:'Canario',         moneda:'COP',trm:3700,totalUSD:38000,
-   color:'#b45309',colorL:'#fef3c7',defStatus:'Pagado',    ingreso:0,
+  {id:'canario',   name:'Canario',         moneda:'COP',trm:3700,totalUSD:38000,
+   color:'#b45309',colorL:'#fef3c7',defStatus:'Pagado',ingreso:0,
    comentario:'Pagado Nov 2025',
-   hitos:[{id:'can1',label:'Pago Inicial',usd:11400,date:'2023-05',seeded:true},
-          {id:'can2',label:'Finalización',usd:26600,date:'2025-11',seeded:true}]},
-  {id:'cabana',   name:'Cabaña Trevelin', moneda:'ARS',trm:1500,totalUSD:110000,
-   color:'#059669',colorL:'#d1fae5',defStatus:'En Curso',  ingreso:200,
+   hitos:[{id:'can1',label:'Pago Inicial',   usd:11400,date:'2023-05',seeded:true},
+          {id:'can2',label:'Finalización',   usd:26600,date:'2025-11',seeded:true}]},
+  {id:'cabana',    name:'Cabaña Trevelin',  moneda:'ARS',trm:1500,totalUSD:110000,
+   color:'#059669',colorL:'#d1fae5',defStatus:'En Curso',ingreso:200,
    comentario:'Pago progresivo. Genera $200/mes',
-   hitos:[{id:'cab1',label:'Construcción', usd:69000,date:'2026-01',seeded:true},
-          {id:'cab2',label:'Restante (progresivo)',usd:41000,date:'2032-06'}]},
-  {id:'indigo',   name:'Indigo',          moneda:'COP',trm:3700,totalUSD:40500,
-   color:'#7c3aed',colorL:'#ede9fe',defStatus:'En Curso',  ingreso:180,
-   comentario:'Restante $19.800 cubierto por inquilino',
-   hitos:[{id:'ind1',label:'Cuota Inicial',usd:12150,date:'2024-12',seeded:true},
-          {id:'ind2',label:'Abono',        usd:8550, date:'2026-03',seeded:true},
-          {id:'ind3',label:'Pago final (inquilino)',usd:19800,date:'2033-11'}]},
-  {id:'chantilly',name:'Chantilly',       moneda:'COP',trm:3700,totalUSD:32500,
-   color:'#db2777',colorL:'#fce7f3',defStatus:'En Curso',  ingreso:155,
+   hitos:[{id:'cab1',label:'Construcción',   usd:69000,date:'2026-01',seeded:true},
+          {id:'cab2',label:'Resto progresivo',usd:41000,date:'2032-06'}]},
+  {id:'indigo',    name:'Indigo',           moneda:'COP',trm:3700,totalUSD:40500,
+   color:'#7c3aed',colorL:'#ede9fe',defStatus:'En Curso',ingreso:180,
+   comentario:'$19.800 restante cubierto por inquilino',
+   hitos:[{id:'ind1',label:'Cuota Inicial',  usd:12150,date:'2024-12',seeded:true},
+          {id:'ind2',label:'Abono',          usd:8550, date:'2026-03',seeded:true},
+          {id:'ind3',label:'Pago final',     usd:19800,date:'2033-11'}]},
+  {id:'chantilly', name:'Chantilly',        moneda:'COP',trm:3700,totalUSD:32500,
+   color:'#db2777',colorL:'#fce7f3',defStatus:'En Curso',ingreso:155,
    comentario:'Genera $155/mes tras pago final',
-   hitos:[{id:'cha1',label:'Cuota Inicial',usd:9750, date:'2024-12',seeded:true},
-          {id:'cha2',label:'Abono',        usd:6450, date:'2026-04',seeded:true},
-          {id:'cha3',label:'Finalización', usd:16300,date:'2026-09'}]},
-  {id:'casabsas', name:'Casa Bs As',      moneda:'ARS',trm:1500,totalUSD:200000,
+   hitos:[{id:'cha1',label:'Cuota Inicial',  usd:9750, date:'2024-12',seeded:true},
+          {id:'cha2',label:'Abono',          usd:6450, date:'2026-04',seeded:true},
+          {id:'cha3',label:'Finalización',   usd:16300,date:'2026-09'}]},
+  {id:'casabsas',  name:'Casa Bs As',       moneda:'ARS',trm:1500,totalUSD:200000,
    color:'#1d4ed8',colorL:'#dbeafe',defStatus:'Sin Iniciar',ingreso:0,
    comentario:'Vivienda personal. Costo neto -$350/mes',
-   hitos:[{id:'cba1',label:'Cuota Inicial',usd:60000,date:'2027-10'},
-          {id:'cba2',label:'Adelanto 1',   usd:30000,date:'2030-07'},
-          {id:'cba3',label:'Adelanto 2',   usd:50000,date:'2034-09'},
-          {id:'cba4',label:'Finalización', usd:60000,date:'2039-03'}]},
-  {id:'rdm',      name:'Reserva del Mar', moneda:'COP',trm:3700,totalUSD:185000,
+   hitos:[{id:'cba1',label:'Cuota Inicial',  usd:60000,date:'2027-10'},
+          {id:'cba2',label:'Adelanto 1',     usd:30000,date:'2030-07'},
+          {id:'cba3',label:'Adelanto 2',     usd:50000,date:'2034-09'},
+          {id:'cba4',label:'Finalización',   usd:60000,date:'2039-03'}]},
+  {id:'rdm',       name:'Reserva del Mar',  moneda:'COP',trm:3700,totalUSD:185000,
    color:'#0891b2',colorL:'#cffafe',defStatus:'Sin Iniciar',ingreso:820,
    comentario:'C.Inicial $55.200 en cuotas. Entrega Abr 2028',
-   hitos:[{id:'rdm1',label:'Adelanto',    usd:52000,date:'2028-08'},
-          {id:'rdm2',label:'Adelanto 2',  usd:60000,date:'2036-05'},
-          {id:'rdm3',label:'Finalización',usd:17800,date:'2039-09'}]},
-  {id:'bogota1',  name:'Bogotá 1',        moneda:'COP',trm:3700,totalUSD:110000,
+   hitos:[{id:'rdm1',label:'Adelanto',       usd:52000,date:'2028-08'},
+          {id:'rdm2',label:'Adelanto 2',     usd:60000,date:'2036-05'},
+          {id:'rdm3',label:'Finalización',   usd:17800,date:'2039-09'}]},
+  {id:'bogota1',   name:'Bogotá 1',         moneda:'COP',trm:3700,totalUSD:110000,
    color:'#ea580c',colorL:'#ffedd5',defStatus:'Sin Iniciar',ingreso:330,
    comentario:'Entrega 2 años tras inicial. Cuota $460/mes',
-   hitos:[{id:'b1a',label:'Cuota Inicial',usd:33000,date:'2029-03'},
-          {id:'b1b',label:'Adelanto 1',   usd:30000,date:'2033-01'},
-          {id:'b1c',label:'Adelanto 2',   usd:30000,date:'2037-02'},
-          {id:'b1d',label:'Finalización', usd:17000,date:'2039-06'}]},
-  {id:'quincho',  name:'Quincho NQN',     moneda:'ARS',trm:1500,totalUSD:60000,
+   hitos:[{id:'b1a',label:'Cuota Inicial',   usd:33000,date:'2029-03'},
+          {id:'b1b',label:'Adelanto 1',      usd:30000,date:'2033-01'},
+          {id:'b1c',label:'Adelanto 2',      usd:30000,date:'2037-02'},
+          {id:'b1d',label:'Finalización',    usd:17000,date:'2039-06'}]},
+  {id:'quincho',   name:'Quincho NQN',      moneda:'ARS',trm:1500,totalUSD:60000,
    color:'#65a30d',colorL:'#ecfccb',defStatus:'Sin Iniciar',ingreso:500,
    comentario:'Genera $500/mes al completarse',
-   hitos:[{id:'qnq1',label:'Inicio obra', usd:25000,date:'2031-01'},
-          {id:'qnq2',label:'Adelanto',    usd:25000,date:'2030-12'},
-          {id:'qnq3',label:'Finalización',usd:10000,date:'2032-01'}]},
-  {id:'avicola',  name:'Avícola',         moneda:'COP',trm:3700,totalUSD:70000,
+   hitos:[{id:'qnq1',label:'Inicio obra',    usd:25000,date:'2031-01'},
+          {id:'qnq2',label:'Adelanto',       usd:25000,date:'2030-12'},
+          {id:'qnq3',label:'Finalización',   usd:10000,date:'2032-01'}]},
+  {id:'avicola',   name:'Avícola',          moneda:'COP',trm:3700,totalUSD:70000,
    color:'#16a34a',colorL:'#dcfce7',defStatus:'Sin Iniciar',ingreso:1200,
    comentario:'Genera $1.200/mes. Pago total',
-   hitos:[{id:'avi1',label:'Pago Total',  usd:70000,date:'2030-02'}]},
-  {id:'bsas2',    name:'Bs As 2da',       moneda:'ARS',trm:1500,totalUSD:150000,
+   hitos:[{id:'avi1',label:'Pago Total',     usd:70000,date:'2030-02'}]},
+  {id:'bsas2',     name:'Bs As 2da',        moneda:'ARS',trm:1500,totalUSD:150000,
    color:'#9333ea',colorL:'#f3e8ff',defStatus:'Sin Iniciar',ingreso:330,
    comentario:'Cuota $460/mes',
-   hitos:[{id:'ba2a',label:'Cuota Inicial',usd:45000,date:'2031-06'},
-          {id:'ba2b',label:'Adelanto 1',   usd:30000,date:'2033-06'},
-          {id:'ba2c',label:'Adelanto 2',   usd:40000,date:'2037-11'},
-          {id:'ba2d',label:'Finalización', usd:35000,date:'2041-03'}]},
-  {id:'medellin', name:'Medellín',        moneda:'COP',trm:3700,totalUSD:110000,
+   hitos:[{id:'ba2a',label:'Cuota Inicial',  usd:45000,date:'2031-06'},
+          {id:'ba2b',label:'Adelanto 1',     usd:30000,date:'2033-06'},
+          {id:'ba2c',label:'Adelanto 2',     usd:40000,date:'2037-11'},
+          {id:'ba2d',label:'Finalización',   usd:35000,date:'2041-03'}]},
+  {id:'medellin',  name:'Medellín',         moneda:'COP',trm:3700,totalUSD:110000,
    color:'#dc2626',colorL:'#fee2e2',defStatus:'Sin Iniciar',ingreso:330,
    comentario:'Cuota $460/mes',
-   hitos:[{id:'med1',label:'Cuota Inicial',usd:33000,date:'2032-06'},
-          {id:'med2',label:'Adelanto 1',   usd:30000,date:'2036-01'},
-          {id:'med3',label:'Adelanto 2',   usd:30000,date:'2039-04'},
-          {id:'med4',label:'Finalización', usd:17000,date:'2040-06'}]},
+   hitos:[{id:'med1',label:'Cuota Inicial',  usd:33000,date:'2032-06'},
+          {id:'med2',label:'Adelanto 1',     usd:30000,date:'2036-01'},
+          {id:'med3',label:'Adelanto 2',     usd:30000,date:'2039-04'},
+          {id:'med4',label:'Finalización',   usd:17000,date:'2040-06'}]},
 ];
-
-const ALL_HITOS_BASE = PROPS_BASE.flatMap(p =>
-  p.hitos.filter(h=>h.date).map(h=>({...h,propId:p.id,propName:p.name,color:p.color,colorL:p.colorL}))
-).sort((a,b)=>a.date.localeCompare(b.date));
 
 const SEEDED_IDS = new Set(PROPS_BASE.flatMap(p=>p.hitos.filter(h=>h.seeded).map(h=>h.id)));
 const KEY = 'retiro_inmobiliario_v2';
 const MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-// ─── UTILIDADES ──────────────────────────────────
-const fUSD = n => '$'+Math.round(n).toLocaleString('es-AR');
-const fLoc = n => '$'+Math.round(n).toLocaleString('es-AR');
-const mStr = (y,m) => `${MES[m-1]} ${y}`;
-const pDate = s => { if(!s)return null; const[y,m]=s.split('-').map(Number); return{y,m}; };
-function addM(y,m,n){m+=n;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return{y,m};}
-const mDiff=(y1,m1,y2,m2)=>(y2-y1)*12+(m2-m1);
-
-// Ahorro teórico mensual — empieza Sep 2026
+// ─── CAPACIDAD DE AHORRO MENSUAL (fuente: Ahorro por mes) ──
+// Inicia Abril 2026. Valores exactos de la imagen.
+const MONTHLY_PLAN = {1:3000,2:3000,3:16333,4:3000,5:3000,6:7333,
+                      7:3000,8:3000,9:3000,10:3000,11:3000,12:7333};
 function mSav(y,m){
-  if(y<2026||(y===2026&&m<9)) return 0;
-  if(m===3) return 16333;
-  if(m===6||m===12) return 7333;
-  return 3000;
+  if(y<2026||(y===2026&&m<4)) return 0;
+  return MONTHLY_PLAN[m]||3000;
 }
 function theorCumul(toY,toM){
-  let t=0,y=2026,m=9;
+  let t=0,y=2026,m=4;
   while(y<toY||(y===toY&&m<=toM)){t+=mSav(y,m);m++;if(m>12){y++;m=1;}}
   return t;
 }
 
-// ─── OVERRIDES & HELPERS ─────────────────────────
-function getProp(p, data){
-  const ov = data.propOverrides?.[p.id] || {};
-  return {
-    ...p,
-    name:      ov.name      !== undefined ? ov.name      : p.name,
-    totalUSD:  ov.totalUSD  !== undefined ? ov.totalUSD  : p.totalUSD,
-    ingreso:   ov.ingreso   !== undefined ? ov.ingreso   : p.ingreso,
-    comentario:ov.comentario!== undefined ? ov.comentario: p.comentario,
-  };
+// ─── UTILIDADES ──────────────────────────────────────
+const fUSD = n=>'$'+Math.round(n).toLocaleString('es-AR');
+const fLoc = n=>'$'+Math.round(n).toLocaleString('es-AR');
+const mStr = (y,m)=>`${MES[m-1]} ${y}`;
+const pDate = s=>{if(!s)return null;const[y,m]=s.split('-').map(Number);return{y,m};};
+function addM(y,m,n){m+=n;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return{y,m};}
+const mDiff=(y1,m1,y2,m2)=>(y2-y1)*12+(m2-m1);
+
+// ─── HELPERS ─────────────────────────────────────────
+function getProp(p,data){
+  const ov=data.propOverrides?.[p.id]||{};
+  return{...p,name:ov.name??p.name,totalUSD:ov.totalUSD??p.totalUSD,
+    ingreso:ov.ingreso??p.ingreso,comentario:ov.comentario??p.comentario};
 }
 function getAllHitos(data){
-  return ALL_HITOS_BASE.map(h=>{
-    const prop = PROPS_BASE.find(p=>p.id===h.propId);
-    const ov = data.propOverrides?.[h.propId] || {};
-    return {...h, propName: ov.name || prop.name};
-  });
+  return PROPS_BASE.flatMap(p=>
+    p.hitos.filter(h=>h.date).map(h=>{
+      const ho=data.hitoOverrides?.[h.id]||{};
+      const po=data.propOverrides?.[p.id]||{};
+      return{...h,usd:ho.usd??h.usd,date:ho.date||h.date,
+        label:ho.label||h.label,propId:p.id,
+        propName:po.name||p.name,color:p.color,colorL:p.colorL};
+    })
+  ).sort((a,b)=>a.date.localeCompare(b.date));
 }
 function getOrderedPending(data){
-  const allH = getAllHitos(data);
-  const paidIds = new Set(Object.keys(data.paid));
-  const pending = allH.filter(h=>!paidIds.has(h.id));
-  const order = data.hitoOrder || [];
-  return [...pending].sort((a,b)=>{
-    const ia=order.indexOf(a.id), ib=order.indexOf(b.id);
-    if(ia===-1&&ib===-1) return a.date.localeCompare(b.date);
-    if(ia===-1) return 1; if(ib===-1) return -1;
-    return ia-ib;
+  const allH=getAllHitos(data);
+  const pIds=new Set(Object.keys(data.paid));
+  const pending=allH.filter(h=>!pIds.has(h.id));
+  const order=data.hitoOrder||[];
+  return[...pending].sort((a,b)=>{
+    const ia=order.indexOf(a.id),ib=order.indexOf(b.id);
+    if(ia===-1&&ib===-1)return a.date.localeCompare(b.date);
+    if(ia===-1)return 1;if(ib===-1)return-1;return ia-ib;
   });
 }
-function getDefaultOrder(data){
-  return getOrderedPending(data).map(h=>h.id);
-}
 
-// ─── STORAGE ─────────────────────────────────────
-const DEF = {trm_ars:1500,trm_cop:3700,savings:[],paid:{},propStatus:{},propOverrides:{},hitoOrder:[]};
+// ─── STORAGE ─────────────────────────────────────────
+const DEF={trm_ars:1500,trm_cop:3700,savings:[],paid:{},propStatus:{},
+           propOverrides:{},hitoOverrides:{},hitoOrder:[]};
 function loadData(){
   try{
     const s=localStorage.getItem(KEY);
     const d=s?{...DEF,...JSON.parse(s)}:{...DEF};
     SEEDED_IDS.forEach(id=>{if(!d.paid[id])d.paid[id]={seeded:true};});
     PROPS_BASE.forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]=p.defStatus;});
-    if(!d.hitoOrder||d.hitoOrder.length===0) d.hitoOrder=getDefaultOrder(d);
+    if(!d.hitoOrder||d.hitoOrder.length===0)
+      d.hitoOrder=getOrderedPending(d).map(h=>h.id);
     return d;
   }catch(e){
     const d={...DEF};
@@ -198,33 +199,26 @@ function loadData(){
   }
 }
 
-// ─── MÉTRICAS ────────────────────────────────────
+// ─── MÉTRICAS ────────────────────────────────────────
 function computeMetrics(data){
-  const now=new Date(), nY=now.getFullYear(), nM=now.getMonth()+1;
+  const now=new Date(),nY=now.getFullYear(),nM=now.getMonth()+1;
   const allH=getAllHitos(data);
-  const paidIds=new Set(Object.keys(data.paid));
+  const pIds=new Set(Object.keys(data.paid));
   const ordPending=getOrderedPending(data);
   const nextHito=ordPending[0]||null;
-
   const realTotal=data.savings.reduce((s,e)=>s+e.usd,0);
   const nonSeededPaid=Object.entries(data.paid)
     .filter(([,v])=>!v.seeded&&v.amount_usd)
     .reduce((s,[,v])=>s+(v.amount_usd||0),0);
   const realBalance=realTotal-nonSeededPaid;
-
   const thTotal=theorCumul(nY,nM);
   const savGap=realTotal-thTotal;
-
-  // Monthly
   const monthTheo=mSav(nY,nM);
   const monthReal=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
-
-  // Portfolio progress
   const seededSum=allH.filter(h=>data.paid[h.id]?.seeded).reduce((s,h)=>s+h.usd,0);
   const totalPortfolio=PROPS_BASE.reduce((s,p)=>s+getProp(p,data).totalUSD,0);
   const progressValue=seededSum+realTotal;
 
-  // Next hito ETA
   let nd=null;
   if(nextHito){
     const{y:py,m:pm}=pDate(nextHito.date);
@@ -234,44 +228,36 @@ function computeMetrics(data){
     }else{
       let bal=realBalance,cy=nY,cm=nM,mo=0;
       while(bal<nextHito.usd&&mo<480){
-        const r=addM(cy,cm,1);cy=r.y;cm=r.m;
-        bal+=mSav(cy,cm);mo++;
+        const r=addM(cy,cm,1);cy=r.y;cm=r.m;bal+=mSav(cy,cm);mo++;
       }
       const delay=Math.max(0,mo-Math.max(0,planMo));
       nd={months:delay,status:delay===0?'ok':delay<=3?'warning':'danger',
           canPay:false,hito:nextHito,reachDate:addM(nY,nM,mo),monthsNeeded:mo};
     }
   }
-
-  // Completion estimate
   let comp=null;
   if(ordPending.length>0){
     let bal=realBalance,cy=nY,cm=nM,r=[...ordPending],it=0;
     while(r.length>0&&it++<800){
-      const nx=addM(cy,cm,1);cy=nx.y;cm=nx.m;
-      bal+=mSav(cy,cm);
+      const nx=addM(cy,cm,1);cy=nx.y;cm=nx.m;bal+=mSav(cy,cm);
       while(r.length>0&&bal>=r[0].usd){bal-=r[0].usd;r.shift();}
     }
     comp={y:cy,m:cm};
   }
-
   let overall='ok';
-  if(savGap<-5000||(nd&&nd.months>3)) overall='danger';
-  else if(savGap<-1000||(nd&&nd.months>0&&nd.months<=3)) overall='warning';
-
-  const paidCount=allH.filter(h=>paidIds.has(h.id)).length;
-  const totalHitos=allH.length;
-
+  if(savGap<-5000||(nd&&nd.months>3))overall='danger';
+  else if(savGap<-1000||(nd&&nd.months>0&&nd.months<=3))overall='warning';
   return{realTotal,nonSeededPaid,realBalance,thTotal,savGap,monthTheo,monthReal,
     seededSum,totalPortfolio,progressValue,
-    paidCount,totalHitos,nextHito,nd,comp,overall,nY,nM,paidIds};
+    paidCount:allH.filter(h=>pIds.has(h.id)).length,
+    totalHitos:allH.length,nextHito,nd,comp,overall,nY,nM,pIds};
 }
 
-// ─── COMPONENTES BASE (sin hooks) ────────────────
+// ─── COMPONENTES BASE ────────────────────────────────
 function PageHeader({title,sub,action}){
-  return<div style={{background:C.white,padding:'16px 16px 12px',borderBottom:`1px solid ${C.border}`,
-    display:'flex',justifyContent:'space-between',alignItems:'flex-end',
-    position:'sticky',top:0,zIndex:10}}>
+  return<div style={{background:C.white,padding:'16px 16px 12px',
+    borderBottom:`1px solid ${C.border}`,position:'sticky',top:0,zIndex:10,
+    display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}>
     <div>
       <div style={{fontSize:10,color:C.primary,fontWeight:700,letterSpacing:1.5,
         textTransform:'uppercase',fontFamily:C.font,marginBottom:2}}>Plan de Retiro</div>
@@ -291,14 +277,9 @@ function Bar({value,max,color,h=6}){
     <div style={{height:'100%',width:`${pct}%`,background:color,borderRadius:h,transition:'width .4s'}}/>
   </div>;
 }
-function Badge({label,color,bg}){
-  return<span style={{fontSize:10,fontWeight:700,color,background:bg,padding:'2px 7px',
-    borderRadius:20,letterSpacing:.3,fontFamily:C.font,display:'inline-block'}}>{label}</span>;
-}
 function Btn({children,onClick,color=C.primary,fullWidth,secondary,small,disabled}){
-  const bg=secondary?C.white:disabled?C.muted:color;
   return<button onClick={onClick} disabled={disabled}
-    style={{padding:small?'7px 13px':'12px 20px',background:bg,
+    style={{padding:small?'7px 12px':'12px 20px',background:secondary?C.white:disabled?C.muted:color,
     border:`1.5px solid ${disabled?C.muted:color}`,borderRadius:9,
     color:secondary?color:'#fff',fontSize:small?12:14,fontWeight:600,
     cursor:disabled?'default':'pointer',fontFamily:C.font,
@@ -313,34 +294,23 @@ function StatRow({label,value,color=C.text,bold}){
     <span style={{fontSize:13,fontWeight:bold?700:600,color,fontFamily:C.font}}>{value}</span>
   </div>;
 }
-function StatusPill({status,size=12}){
-  const m={
-    'Pagado':    {c:C.success,bg:C.successL},
-    'En Curso':  {c:C.warning,bg:C.warningL},
-    'Sin Iniciar':{c:C.danger,bg:C.dangerL},
-  };
-  const s=m[status]||m['Sin Iniciar'];
-  return<span style={{fontSize:size,fontWeight:700,color:s.c,background:s.bg,
-    padding:'3px 9px',borderRadius:20,fontFamily:C.font,display:'inline-block'}}>{status}</span>;
-}
 
-// ─── TAB INICIO ──────────────────────────────────
-function InicioTab({metrics,onAddSaving}){
+// ─── TAB INICIO ──────────────────────────────────────
+function InicioTab({metrics,data,onAddSaving}){
   const{realTotal,realBalance,thTotal,savGap,monthTheo,monthReal,
     progressValue,totalPortfolio,seededSum,
     paidCount,totalHitos,nd,comp,overall,nY,nM}=metrics;
-
   const ahead=savGap>=0;
   const mAhead=monthReal>=monthTheo;
   const progressPct=totalPortfolio>0?(progressValue/totalPortfolio*100):0;
-
+  const compDelay=comp?mDiff(2039,6,comp.y,comp.m):0;
   const stConf={
     ok:{c:C.success,bg:C.successL,msg:'Al día con el plan'},
     warning:{c:C.warning,bg:C.warningL,msg:'Posible retraso próximamente'},
     danger:{c:C.danger,bg:C.dangerL,msg:'Retrasado respecto al plan'},
   }[overall];
-  const compDelay=comp?mDiff(2039,6,comp.y,comp.m):0;
-  const planStarted=(nY>2026||(nY===2026&&nM>=9));
+  // Theoretical table for current month
+  const planMes=MES_FULL[nM-1];
 
   return<div className="fade-in">
     <PageHeader title="Inicio" sub={`${mStr(nY,nM)} · Actualizado ahora`}/>
@@ -351,7 +321,7 @@ function InicioTab({metrics,onAddSaving}){
         padding:'11px 14px',display:'flex',alignItems:'center',gap:12}}>
         <div style={{width:34,height:34,borderRadius:17,background:stConf.c+'22',
           display:'flex',alignItems:'center',justifyContent:'center',
-          fontSize:17,fontWeight:700,color:stConf.c,flexShrink:0}}>
+          fontSize:16,fontWeight:700,color:stConf.c,flexShrink:0}}>
           {overall==='ok'?'✓':overall==='warning'?'▲':'!'}
         </div>
         <div>
@@ -364,101 +334,88 @@ function InicioTab({metrics,onAddSaving}){
       </div>
     </div>
 
-    {/* Card mensual teórico vs real */}
+    {/* Card teórico mensual */}
     <Card style={{marginTop:10}}>
       <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,
         textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
-        Ahorro — {mStr(nY,nM)}
+        Ahorro — {planMes} {nY}
       </div>
-      {!planStarted?(
-        <div style={{fontSize:13,color:C.sub,fontFamily:C.font,textAlign:'center',padding:'8px 0'}}>
-          El plan de ahorro inicia en Sep 2026
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+        <div style={{background:C.border2,borderRadius:9,padding:10}}>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Teórico este mes</div>
+          <div style={{fontSize:20,fontWeight:700,color:C.primary,fontFamily:C.head,lineHeight:1.1,marginTop:2}}>
+            {fUSD(monthTheo)}
+          </div>
+          <div style={{fontSize:10,color:C.muted,fontFamily:C.font,marginTop:2}}>{planMes}: plan</div>
         </div>
-      ):(
-        <>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-            <div style={{background:C.border2,borderRadius:9,padding:'10px'}}>
-              <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Teórico este mes</div>
-              <div style={{fontSize:19,fontWeight:700,color:C.primary,fontFamily:C.head,lineHeight:1.1,marginTop:2}}>
-                {fUSD(monthTheo)}
-              </div>
-            </div>
-            <div style={{background:mAhead?C.successL:C.dangerL,borderRadius:9,padding:'10px',
-              border:`1.5px solid ${mAhead?C.success:C.danger}22`}}>
-              <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Real este mes</div>
-              <div style={{fontSize:19,fontWeight:700,color:mAhead?C.success:C.danger,fontFamily:C.head,lineHeight:1.1,marginTop:2}}>
-                {fUSD(monthReal)}
-              </div>
-            </div>
+        <div style={{background:mAhead?C.successL:C.dangerL,borderRadius:9,padding:10,
+          border:`1.5px solid ${mAhead?C.success:C.danger}22`}}>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Real este mes</div>
+          <div style={{fontSize:20,fontWeight:700,color:mAhead?C.success:C.danger,
+            fontFamily:C.head,lineHeight:1.1,marginTop:2}}>
+            {fUSD(monthReal)}
           </div>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-            padding:'8px 10px',background:mAhead?C.successL:C.dangerL,borderRadius:8,marginBottom:10}}>
-            <span style={{fontSize:13,color:C.sub,fontFamily:C.font}}>Diferencia mes actual</span>
-            <span style={{fontSize:14,fontWeight:700,color:mAhead?C.success:C.danger,fontFamily:C.font}}>
-              {monthReal-monthTheo>=0?'+':''}{fUSD(monthReal-monthTheo)}
-            </span>
+          <div style={{fontSize:10,color:mAhead?C.success:C.danger,fontFamily:C.font,marginTop:2}}>
+            {monthReal-monthTheo>=0?'+'  :''}{fUSD(monthReal-monthTheo)}
           </div>
-          {/* Acumulado */}
-          <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-              <div>
-                <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Acumulado real</div>
-                <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:C.head,marginTop:1}}>{fUSD(realTotal)}</div>
-              </div>
-              <div>
-                <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Acumulado teórico</div>
-                <div style={{fontSize:17,fontWeight:700,color:ahead?C.success:C.danger,fontFamily:C.head,marginTop:1}}>{fUSD(thTotal)}</div>
-              </div>
-            </div>
+        </div>
+      </div>
+      {/* Acumulados */}
+      <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10,
+        display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Acumulado real</div>
+          <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:C.head,marginTop:1}}>{fUSD(realTotal)}</div>
+        </div>
+        <div>
+          <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Acumulado teórico</div>
+          <div style={{fontSize:17,fontWeight:700,color:ahead?C.success:C.danger,fontFamily:C.head,marginTop:1}}>
+            {fUSD(thTotal)}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </Card>
 
-    {/* Portfolio progress */}
+    {/* Portfolio */}
     <Card>
       <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,
         textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>Portfolio Total</div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:8}}>
         <div>
-          <div style={{fontSize:26,fontWeight:700,color:C.primary,fontFamily:C.head,lineHeight:1}}>
+          <div style={{fontSize:28,fontWeight:700,color:C.primary,fontFamily:C.head,lineHeight:1}}>
             {progressPct.toFixed(1)}%
           </div>
-          <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:2}}>financiado</div>
+          <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:1}}>financiado</div>
         </div>
         <div style={{textAlign:'right'}}>
-          <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font}}>
-            {fUSD(progressValue)}
-          </div>
+          <div style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:C.font}}>{fUSD(progressValue)}</div>
           <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>de {fUSD(totalPortfolio)}</div>
         </div>
       </div>
       <Bar value={progressValue} max={totalPortfolio} color={C.primary} h={10}/>
-      <div style={{marginTop:8,display:'flex',justifyContent:'space-between',
+      <div style={{marginTop:6,display:'flex',justifyContent:'space-between',
         fontSize:11,color:C.muted,fontFamily:C.font}}>
-        <span>Pagos históricos: {fUSD(seededSum)}</span>
-        <span>Ahorro acumulado: {fUSD(realTotal)}</span>
+        <span>Histórico pagado: {fUSD(seededSum)}</span>
+        <span>Ahorro acum.: {fUSD(realTotal)}</span>
       </div>
-      <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border2}`,
+      <div style={{marginTop:7,paddingTop:7,borderTop:`1px solid ${C.border2}`,
         display:'flex',justifyContent:'space-between',fontSize:12,fontFamily:C.font}}>
-        <span style={{color:C.sub}}>{paidCount}/{totalHitos} hitos pagados</span>
+        <span style={{color:C.sub}}>{paidCount}/{totalHitos} hitos</span>
         {comp&&<span style={{fontWeight:700,color:compDelay>0?C.warning:C.success}}>
           Fin: {mStr(comp.y,comp.m)}{compDelay>0?` (+${compDelay}m)`:' ✓'}
         </span>}
       </div>
     </Card>
 
-    {/* Próximo pago + alerta */}
+    {/* Próximo hito */}
     {nd&&nd.hito&&(
       <Card>
         <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,
-          textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
-          Próximo Hito — #{ALL_HITOS_BASE.findIndex(h=>h.id===nd.hito.id)+1}
-        </div>
+          textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>Próximo Pago</div>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
           <div>
-            <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
-              <div style={{width:9,height:9,borderRadius:5,background:nd.hito.color,flexShrink:0}}/>
+            <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3}}>
+              <div style={{width:8,height:8,borderRadius:4,background:nd.hito.color}}/>
               <span style={{fontSize:12,color:C.sub,fontFamily:C.font}}>{nd.hito.propName}</span>
             </div>
             <div style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:C.head}}>{nd.hito.label}</div>
@@ -490,15 +447,13 @@ function InicioTab({metrics,onAddSaving}){
             borderRadius:8,padding:'9px 12px',fontSize:13,fontFamily:C.font,fontWeight:600,
             color:nd.status==='ok'?C.success:nd.status==='warning'?C.warning:C.danger}}>
             {nd.months===0
-              ?`✓ Llegás en fecha — saldo disponible ${mStr(nd.reachDate.y,nd.reachDate.m)}`
-              :`▲ Delay estimado: ${nd.months} meses — pago posible ${mStr(nd.reachDate.y,nd.reachDate.m)}`
-            }
+              ?`✓ Llegás en fecha — saldo listo ${mStr(nd.reachDate.y,nd.reachDate.m)}`
+              :`▲ Delay: ${nd.months} meses — pago posible ${mStr(nd.reachDate.y,nd.reachDate.m)}`}
             {nd.months>0&&monthTheo>0&&(()=>{
-              const faltante=nd.hito.usd-realBalance;
+              const faltante=Math.max(0,nd.hito.usd-realBalance);
               const mesesPlan=Math.max(1,mDiff(nY,nM,...Object.values(pDate(nd.hito.date))));
-              const necesario=Math.ceil(faltante/mesesPlan);
-              return<div style={{fontSize:11,marginTop:4,opacity:.85}}>
-                Necesitás ~{fUSD(necesario)}/mes para llegar en fecha
+              return<div style={{fontSize:11,marginTop:3,opacity:.85}}>
+                Necesitás ~{fUSD(Math.ceil(faltante/mesesPlan))}/mes para llegar en fecha
               </div>;
             })()}
           </div>
@@ -512,20 +467,18 @@ function InicioTab({metrics,onAddSaving}){
   </div>;
 }
 
-// ─── TAB AHORROS ─────────────────────────────────
+// ─── TAB AHORROS ─────────────────────────────────────
 function AhorrosTab({data,metrics,onAdd,onEdit,onDelete}){
   const sorted=[...data.savings].sort((a,b)=>b.year-a.year||(b.month-a.month));
-  const avg=sorted.length>0?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
+  const avg=sorted.length?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
   return<div className="fade-in">
     <PageHeader title="Ahorros" sub="Registro mensual · ARS y COP"
       action={<Btn onClick={onAdd} small>+ Agregar</Btn>}/>
     <Card style={{marginTop:12}}>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center'}}>
-        {[
-          {l:'Total USD',v:fUSD(metrics.realTotal),c:C.primary},
+        {[{l:'Total USD',v:fUSD(metrics.realTotal),c:C.primary},
           {l:'Meses',v:data.savings.length,c:C.text},
-          {l:'Prom/mes',v:fUSD(avg),c:C.warning},
-        ].map(({l,v,c})=>(
+          {l:'Prom/mes',v:fUSD(avg),c:C.warning}].map(({l,v,c})=>(
           <div key={l}>
             <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{l}</div>
             <div style={{fontSize:15,fontWeight:700,color:c,fontFamily:C.head,marginTop:2}}>{v}</div>
@@ -533,16 +486,41 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete}){
         ))}
       </div>
     </Card>
+
+    {/* Tabla teórico mensual - referencia */}
+    <Card>
+      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,
+        textTransform:'uppercase',marginBottom:8,fontFamily:C.font}}>
+        Capacidad teórica mensual
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:1}}>
+        {MES_FULL.map((m,i)=>{
+          const v=MONTHLY_PLAN[i+1];
+          const isSpecial=v>3000;
+          const nY=new Date().getFullYear(),nM=new Date().getMonth()+1;
+          const isCurrent=(nM===i+1);
+          return<div key={m} style={{padding:'5px 4px',textAlign:'center',
+            background:isCurrent?C.primaryL:isSpecial?C.warningL:C.border2,
+            borderRadius:4,margin:1}}>
+            <div style={{fontSize:9,color:C.sub,fontFamily:C.font}}>{MES[i]}</div>
+            <div style={{fontSize:11,fontWeight:isSpecial?700:600,
+              color:isSpecial?C.warning:C.text,fontFamily:C.font}}>
+              {v>=1000?`${(v/1000).toFixed(0)}K`:`${v}`}
+            </div>
+          </div>;
+        })}
+      </div>
+    </Card>
+
     {sorted.length===0?(
-      <div style={{textAlign:'center',padding:'48px 20px'}}>
+      <div style={{textAlign:'center',padding:'40px 20px'}}>
         <div style={{fontSize:40,marginBottom:12}}>💰</div>
-        <div style={{fontSize:15,fontWeight:700,color:C.text,fontFamily:C.head}}>Sin ahorros registrados</div>
-        <div style={{fontSize:13,color:C.sub,marginTop:4,fontFamily:C.font}}>Plan inicia Sep 2026</div>
+        <div style={{fontSize:15,fontWeight:700,color:C.text,fontFamily:C.head}}>Sin ahorros aún</div>
+        <div style={{fontSize:13,color:C.sub,marginTop:4,fontFamily:C.font}}>Plan inicia Abril 2026</div>
       </div>
     ):(
       <div>{sorted.map(s=>{
-        const th=mSav(s.year,s.month);
-        const diff=s.usd-th, ok=diff>=0;
+        const th=mSav(s.year,s.month),diff=s.usd-th,ok=diff>=0;
         return<div key={s.id} className="fade-in"
           style={{margin:'0 12px 8px',background:C.white,borderRadius:12,
           padding:13,border:`1px solid ${C.border}`}}>
@@ -576,15 +554,20 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete}){
   </div>;
 }
 
-// ─── TAB PROPIEDADES ─────────────────────────────
-function PropiedadesTab({data,onChangeStatus,onEditProp}){
+// ─── TAB PROPIEDADES ─────────────────────────────────
+function PropiedadesTab({data,onChangeStatus,onEditProp,onEditHito}){
+  const pIds=new Set(Object.keys(data.paid));
   const totalPortfolio=PROPS_BASE.reduce((s,p)=>s+getProp(p,data).totalUSD,0);
   const totalIngresos=PROPS_BASE.reduce((s,p)=>s+getProp(p,data).ingreso,0);
-  const paidIds=new Set(Object.keys(data.paid));
+  const stColors={
+    'Pagado':{c:C.success,bg:C.successL},
+    'En Curso':{c:C.warning,bg:C.warningL},
+    'Sin Iniciar':{c:C.danger,bg:C.dangerL},
+  };
 
   return<div className="fade-in">
     <PageHeader title="Propiedades"
-      sub={`${PROPS_BASE.length} inmuebles · ${fUSD(totalPortfolio)} portfolio`}/>
+      sub={`${PROPS_BASE.length} inmuebles · ${fUSD(totalPortfolio)}`}/>
     <Card style={{marginTop:12}}>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
         <div>
@@ -597,13 +580,20 @@ function PropiedadesTab({data,onChangeStatus,onEditProp}){
         </div>
       </div>
     </Card>
+
     {PROPS_BASE.map(pb=>{
       const p=getProp(pb,data);
-      const status=data.propStatus[p.id]||p.defStatus;
-      const paidUSD=pb.hitos.filter(h=>paidIds.has(h.id)).reduce((s,h)=>s+h.usd,0);
-      const remaining=p.totalUSD-paidUSD;
-      return<div key={p.id} style={{margin:'0 12px 10px',background:C.white,
-        borderRadius:14,border:`1px solid ${C.border}`,overflow:'hidden'}}>
+      const status=data.propStatus[pb.id]||pb.defStatus;
+      const sc=stColors[status]||stColors['Sin Iniciar'];
+      const paidUSD=pb.hitos.filter(h=>pIds.has(h.id)).reduce((s,h)=>{
+        const ho=data.hitoOverrides?.[h.id]||{};
+        return s+(ho.usd??h.usd);
+      },0);
+      const remaining=Math.max(0,p.totalUSD-paidUSD);
+
+      return<div key={pb.id} style={{margin:'0 12px 10px',background:C.white,
+        borderRadius:14,border:`1.5px solid ${sc.c}33`,overflow:'hidden'}}>
+        {/* Header con color del estado */}
         <div style={{background:pb.colorL,borderBottom:`3px solid ${pb.color}`,
           padding:'11px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
@@ -612,30 +602,29 @@ function PropiedadesTab({data,onChangeStatus,onEditProp}){
               {pb.moneda} · {fUSD(p.totalUSD)} total
             </div>
           </div>
-          <div style={{display:'flex',gap:7,alignItems:'center'}}>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            {/* Selector de estado con color */}
             <select value={status} onChange={e=>onChangeStatus(pb.id,e.target.value)}
-              style={{background:C.white,border:`1.5px solid ${C.border}`,color:C.text,
+              style={{background:sc.bg,border:`1.5px solid ${sc.c}`,color:sc.c,
               borderRadius:20,padding:'5px 9px',fontSize:11,fontWeight:700,
               fontFamily:C.font,cursor:'pointer',outline:'none'}}>
-              <option>Pagado</option><option>En Curso</option><option>Sin Iniciar</option>
+              <option>Pagado</option>
+              <option>En Curso</option>
+              <option>Sin Iniciar</option>
             </select>
             <button onClick={()=>onEditProp(pb.id)}
               style={{background:C.white,border:`1.5px solid ${C.border}`,borderRadius:8,
-              padding:'5px 9px',cursor:'pointer',fontSize:12,fontFamily:C.font,color:C.sub}}>
+              padding:'5px 9px',cursor:'pointer',fontSize:13,fontFamily:C.font,color:C.sub}}>
               ✏️
             </button>
           </div>
         </div>
+
         <div style={{padding:'11px 13px'}}>
-          {/* Estado badge */}
-          <div style={{marginBottom:8}}>
-            <StatusPill status={status}/>
-          </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7,marginBottom:9}}>
-            {[
-              {l:'Pagado',v:fUSD(paidUSD),c:C.success},
-              {l:'Pendiente',v:fUSD(Math.max(0,remaining)),c:remaining>0?C.warning:C.success},
-              {l:'Ingreso/mes',v:p.ingreso>0?`+${fUSD(p.ingreso)}`:'-',c:p.ingreso>0?C.success:C.sub},
+            {[{l:'Pagado',v:fUSD(paidUSD),c:C.success},
+              {l:'Pendiente',v:fUSD(remaining),c:remaining>0?C.warning:C.success},
+              {l:'Ingreso/mes',v:p.ingreso>0?`+${fUSD(p.ingreso)}`:'-',c:p.ingreso>0?C.success:C.sub}
             ].map(({l,v,c})=>(
               <div key={l} style={{textAlign:'center',background:C.border2,borderRadius:8,padding:'7px 3px'}}>
                 <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>{l}</div>
@@ -644,25 +633,37 @@ function PropiedadesTab({data,onChangeStatus,onEditProp}){
             ))}
           </div>
           <Bar value={paidUSD} max={p.totalUSD} color={pb.color} h={7}/>
-          <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:3,marginBottom:8,textAlign:'right'}}>
+          <div style={{fontSize:11,color:C.sub,textAlign:'right',marginTop:3,marginBottom:8,fontFamily:C.font}}>
             {p.totalUSD>0?((paidUSD/p.totalUSD)*100).toFixed(0):0}% pagado
           </div>
+
+          {/* Hitos editables */}
           {pb.hitos.filter(h=>h.date).map(h=>{
-            const paid=paidIds.has(h.id);
-            const d=pDate(h.date);
+            const ho=data.hitoOverrides?.[h.id]||{};
+            const hUSD=ho.usd??h.usd;
+            const hDate=ho.date||h.date;
+            const hLabel=ho.label||h.label;
+            const paid=pIds.has(h.id);
+            const d=pDate(hDate);
             return<div key={h.id} style={{display:'flex',justifyContent:'space-between',
-              alignItems:'center',padding:'6px 0',borderTop:`1px solid ${C.border2}`}}>
-              <div style={{display:'flex',alignItems:'center',gap:7}}>
-                <span style={{color:paid?C.success:C.muted,fontSize:13}}>{paid?'✓':'○'}</span>
-                <div>
+              alignItems:'center',padding:'7px 0',borderTop:`1px solid ${C.border2}`}}>
+              <div style={{display:'flex',alignItems:'center',gap:7,flex:1}}>
+                <span style={{color:paid?C.success:C.muted,fontSize:13,flexShrink:0}}>{paid?'✓':'○'}</span>
+                <div style={{flex:1}}>
                   <div style={{fontSize:12,fontWeight:600,color:paid?C.sub:C.text,
-                    fontFamily:C.font,textDecoration:paid?'line-through':'none'}}>{h.label}</div>
+                    fontFamily:C.font,textDecoration:paid?'line-through':'none'}}>{hLabel}</div>
                   {d&&<div style={{fontSize:10,color:C.muted,fontFamily:C.font}}>{mStr(d.y,d.m)}</div>}
                 </div>
               </div>
-              <span style={{fontSize:12,fontWeight:700,color:paid?C.sub:pb.color,fontFamily:C.head}}>
-                {fUSD(h.usd)}
-              </span>
+              <div style={{display:'flex',alignItems:'center',gap:7,flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:700,color:paid?C.sub:pb.color,
+                  fontFamily:C.head}}>{fUSD(hUSD)}</span>
+                {!paid&&<button onClick={()=>onEditHito(h,pb)}
+                  style={{background:C.border2,border:`1px solid ${C.border}`,borderRadius:6,
+                  padding:'3px 6px',cursor:'pointer',fontSize:11,fontFamily:C.font,color:C.sub}}>
+                  ✏️
+                </button>}
+              </div>
             </div>;
           })}
           {p.comentario&&<div style={{marginTop:8,fontSize:11,color:C.sub,fontFamily:C.font,
@@ -676,105 +677,91 @@ function PropiedadesTab({data,onChangeStatus,onEditProp}){
   </div>;
 }
 
-// ─── TAB PLAN ────────────────────────────────────
+// ─── TAB PLAN ────────────────────────────────────────
 function PlanTab({data,metrics,planFilter,setPlanFilter,onMarkPaid,onUnmark,onMoveHito}){
-  const{nY,nM,paidIds}=metrics;
+  const{nY,nM,pIds}=metrics;
   const allH=getAllHitos(data);
   const ordPending=getOrderedPending(data);
-  const paidHitos=[...allH.filter(h=>paidIds.has(h.id))].sort((a,b)=>a.date.localeCompare(b.date));
+  const paidHitos=[...allH.filter(h=>pIds.has(h.id))].sort((a,b)=>a.date.localeCompare(b.date));
   const totalPend=ordPending.reduce((s,h)=>s+h.usd,0);
+  const showReorder=planFilter==='pendientes'||planFilter==='todos';
 
   const toShow=useMemo(()=>{
     if(planFilter==='pagados') return paidHitos;
     if(planFilter==='pendientes') return ordPending;
     if(planFilter!=='todos'){
-      const paid=paidHitos.filter(h=>h.propId===planFilter);
-      const pend=ordPending.filter(h=>h.propId===planFilter);
-      return [...paid,...pend];
+      return[...paidHitos.filter(h=>h.propId===planFilter),
+             ...ordPending.filter(h=>h.propId===planFilter)];
     }
-    return [...paidHitos,...ordPending];
+    return[...paidHitos,...ordPending];
   },[planFilter,paidHitos,ordPending]);
-
-  const showReorder=planFilter==='pendientes'||planFilter==='todos';
 
   return<div className="fade-in">
     <PageHeader title="Plan de Pagos"
-      sub={`${paidIds.size} pagados · ${fUSD(totalPend)} pendiente`}/>
-
+      sub={`${pIds.size} pagados · ${fUSD(totalPend)} pendiente`}/>
     <div style={{padding:'8px 12px 4px',overflowX:'auto',display:'flex',gap:6,
       WebkitOverflowScrolling:'touch',scrollbarWidth:'none'}}>
-      {[
-        {k:'todos',l:'Todos'},
-        {k:'pagados',l:'Pagados'},
-        {k:'pendientes',l:'Pendientes ↕'},
+      {[{k:'todos',l:'Todos'},{k:'pagados',l:'Pagados'},{k:'pendientes',l:'Pendientes ↕'},
         ...PROPS_BASE.map(p=>({k:p.id,l:getProp(p,data).name,color:p.color}))
       ].map(f=>(
         <button key={f.k} onClick={()=>setPlanFilter(f.k)}
-          style={{padding:'6px 12px',borderRadius:20,flexShrink:0,
+          style={{padding:'6px 11px',borderRadius:20,flexShrink:0,
           border:`1.5px solid ${planFilter===f.k?(f.color||C.primary):C.border}`,
           background:planFilter===f.k?(f.color||C.primary):C.white,
-          color:planFilter===f.k?'#fff':C.sub,fontSize:11,fontWeight:600,
-          cursor:'pointer',fontFamily:C.font,whiteSpace:'nowrap'}}>
+          color:planFilter===f.k?'#fff':C.sub,
+          fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:C.font,whiteSpace:'nowrap'}}>
           {f.l}
         </button>
       ))}
     </div>
-    {showReorder&&<div style={{padding:'4px 12px 0',fontSize:11,color:C.muted,fontFamily:C.font}}>
-      ↕ Arrastrá con los botones para reordenar pendientes
-    </div>}
 
     <div style={{paddingTop:8,paddingBottom:8}}>
-      {toShow.map((h,idx)=>{
-        const paid=paidIds.has(h.id);
+      {toShow.map(h=>{
+        const paid=pIds.has(h.id);
         const{y:py,m:pm}=pDate(h.date);
         const isFirst=!paid&&ordPending[0]?.id===h.id;
         const isOver=!paid&&(py<nY||(py===nY&&pm<nM));
         const seeded=data.paid[h.id]?.seeded;
-        // Position in pending list for reorder buttons
         const pendIdx=ordPending.findIndex(x=>x.id===h.id);
-        const canMoveUp=!paid&&pendIdx>0;
-        const canMoveDown=!paid&&pendIdx<ordPending.length-1;
 
         return<div key={h.id} className="fade-in"
-          style={{margin:'0 12px 8px',background:C.white,borderRadius:12,
-          border:`1.5px solid ${paid?h.color+'44':isFirst?h.color:C.border}`,
-          opacity:paid&&seeded?.65:1}}>
+          style={{margin:'0 12px 7px',background:C.white,borderRadius:12,
+          border:`1.5px solid ${paid?h.color+'33':isFirst?h.color:C.border}`,
+          opacity:seeded?.65:1}}>
           <div style={{padding:'11px 13px'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
               <div style={{flex:1,marginRight:8}}>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3,flexWrap:'wrap'}}>
                   <div style={{width:8,height:8,borderRadius:4,background:h.color}}/>
                   <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
-                  {paid&&<Badge label={seeded?'Ya pagado':'✓ Pagado'} color={C.success} bg={C.successL}/>}
-                  {isFirst&&!paid&&<Badge label="Próximo" color={C.primary} bg={C.primaryL}/>}
-                  {isOver&&!paid&&<Badge label="Vencido" color={C.danger} bg={C.dangerL}/>}
-                  {!paid&&!isFirst&&showReorder&&<span style={{fontSize:10,color:C.muted,fontFamily:C.font}}>
-                    #{pendIdx+1}
-                  </span>}
+                  {isFirst&&!paid&&<span style={{fontSize:10,fontWeight:700,color:C.primary,
+                    background:C.primaryL,padding:'2px 7px',borderRadius:20,fontFamily:C.font}}>Próximo</span>}
+                  {isOver&&!paid&&<span style={{fontSize:10,fontWeight:700,color:C.danger,
+                    background:C.dangerL,padding:'2px 7px',borderRadius:20,fontFamily:C.font}}>Vencido</span>}
+                  {!paid&&!isFirst&&showReorder&&pendIdx>=0&&
+                    <span style={{fontSize:10,color:C.muted,fontFamily:C.font}}>#{pendIdx+1}</span>}
                 </div>
                 <div style={{fontSize:15,fontWeight:700,color:paid?C.sub:C.text,
                   fontFamily:C.head,textDecoration:paid?'line-through':'none'}}>{h.label}</div>
                 <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:2}}>
                   {mStr(py,pm)}
-                  {paid&&data.paid[h.id]?.date&&!seeded&&` · Pagado: ${data.paid[h.id].date}`}
+                  {paid&&data.paid[h.id]?.date&&!seeded&&` · Pagado ${data.paid[h.id].date}`}
                 </div>
               </div>
               <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
                 <div style={{fontSize:19,fontWeight:700,fontFamily:C.head,
                   color:paid?C.success:isFirst?h.color:C.text}}>{fUSD(h.usd)}</div>
-                {/* Reorder arrows */}
                 {!paid&&showReorder&&(
                   <div style={{display:'flex',gap:3}}>
-                    <button onClick={()=>canMoveUp&&onMoveHito(h.id,'up')} disabled={!canMoveUp}
-                      style={{background:C.border2,border:`1px solid ${C.border}`,borderRadius:5,
-                      width:24,height:24,cursor:canMoveUp?'pointer':'default',
-                      color:canMoveUp?C.text:C.muted,fontSize:13,fontFamily:C.font,
-                      opacity:canMoveUp?1:.35}}>↑</button>
-                    <button onClick={()=>canMoveDown&&onMoveHito(h.id,'down')} disabled={!canMoveDown}
-                      style={{background:C.border2,border:`1px solid ${C.border}`,borderRadius:5,
-                      width:24,height:24,cursor:canMoveDown?'pointer':'default',
-                      color:canMoveDown?C.text:C.muted,fontSize:13,fontFamily:C.font,
-                      opacity:canMoveDown?1:.35}}>↓</button>
+                    {['up','down'].map(dir=>{
+                      const can=dir==='up'?pendIdx>0:pendIdx<ordPending.length-1;
+                      return<button key={dir} onClick={()=>can&&onMoveHito(h.id,dir)}
+                        style={{background:C.border2,border:`1px solid ${C.border}`,borderRadius:5,
+                        width:24,height:24,cursor:can?'pointer':'default',
+                        color:can?C.text:C.muted,fontSize:12,fontFamily:C.font,opacity:can?1:.3}}>
+                        {dir==='up'?'↑':'↓'}
+                      </button>;
+                    })}
                   </div>
                 )}
               </div>
@@ -783,9 +770,7 @@ function PlanTab({data,metrics,planFilter,setPlanFilter,onMarkPaid,onUnmark,onMo
               <button onClick={()=>onMarkPaid(h)}
                 style={{marginTop:9,width:'100%',padding:'9px',background:h.color,
                 border:'none',borderRadius:8,color:'#fff',fontSize:13,fontWeight:700,
-                cursor:'pointer',fontFamily:C.font}}>
-                ✓ Marcar como Pagado
-              </button>
+                cursor:'pointer',fontFamily:C.font}}>✓ Marcar como Pagado</button>
             )}
             {paid&&!seeded&&(
               <button onClick={()=>onUnmark(h.id)}
@@ -802,15 +787,14 @@ function PlanTab({data,metrics,planFilter,setPlanFilter,onMarkPaid,onUnmark,onMo
   </div>;
 }
 
-// ─── TAB PROYECCIÓN ──────────────────────────────
+// ─── TAB PROYECCIÓN ──────────────────────────────────
 function ProyeccionTab({data,metrics}){
-  const{realTotal,thTotal,savGap,comp,nY,nM,paidIds}=metrics;
-  const allH=getAllHitos(data);
-  const pending=allH.filter(h=>!paidIds.has(h.id));
+  const{realTotal,thTotal,savGap,comp,nY,nM,pIds}=metrics;
+  const pending=getAllHitos(data).filter(h=>!pIds.has(h.id));
   const chartPts=useMemo(()=>{
     const pts=[];let tC=0,rC=0;
     for(let y=2026;y<=2041;y++){
-      for(let m=(y===2026?9:1);m<=12;m++){
+      for(let m=(y===2026?4:1);m<=12;m++){
         tC+=mSav(y,m);
         const e=data.savings.find(s=>s.year===y&&s.month===m);
         if(e) rC+=e.usd;
@@ -820,10 +804,9 @@ function ProyeccionTab({data,metrics}){
     }
     return pts;
   },[data,nY,nM]);
-
   const maxV=Math.max(...chartPts.map(p=>p.tC),1);
   const W=900,H=180,ML=38,MB=20,MT=8,MR=8,PW=W-ML-MR,PH=H-MB-MT;
-  const xOf=(y,m)=>ML+((y-2026)*12+(m-9))*(PW/((2041-2026)*12+4));
+  const xOf=(y,m)=>ML+((y-2026)*12+(m-4))*(PW/((2041-2026)*12+9));
   const yOf=v=>MT+PH-(v/maxV)*PH;
   const tPath=chartPts.map((p,i)=>`${i===0?'M':'L'}${xOf(p.y,p.m).toFixed(1)},${yOf(p.tC).toFixed(1)}`).join(' ');
   const rPts=chartPts.filter(p=>p.rC!=null);
@@ -848,13 +831,12 @@ function ProyeccionTab({data,metrics}){
           })}
           {[2026,2028,2030,2032,2034,2036,2038,2040].map(yr=>(
             <g key={yr}>
-              <line x1={xOf(yr,1)} y1={MT} x2={xOf(yr,1)} y2={MT+PH} stroke={C.border2} strokeWidth={1}/>
-              <text x={xOf(yr,1)} y={H} fill={C.sub} fontSize={9} textAnchor="middle" fontFamily="Inter">{yr}</text>
+              <line x1={xOf(yr,4)} y1={MT} x2={xOf(yr,4)} y2={MT+PH} stroke={C.border2} strokeWidth={1}/>
+              <text x={xOf(yr,4)} y={H} fill={C.sub} fontSize={9} textAnchor="middle" fontFamily="Inter">{yr}</text>
             </g>
           ))}
           {pending.slice(0,15).map(h=>{
-            const d=pDate(h.date);
-            if(!d||d.y>2041) return null;
+            const d=pDate(h.date);if(!d||d.y>2041)return null;
             return<line key={h.id} x1={xOf(d.y,d.m)} y1={MT} x2={xOf(d.y,d.m)} y2={MT+PH}
               stroke={C.warning} strokeWidth={1} strokeDasharray="3,3" opacity={.4}/>;
           })}
@@ -867,11 +849,13 @@ function ProyeccionTab({data,metrics}){
         </svg>
       </div>
       <div style={{display:'flex',gap:14,padding:'4px 13px',flexWrap:'wrap'}}>
-        {[{c:C.muted,dash:true,l:'Teórico'},{c:C.success,l:'Real'},{c:C.warning,dash:true,l:'Pagos pendientes'}]
+        {[{c:C.muted,dash:true,l:'Teórico'},{c:C.success,l:'Real'},{c:C.warning,dash:true,l:'Pagos'}]
           .map(({c,dash,l})=>(
           <div key={l} style={{display:'flex',alignItems:'center',gap:5}}>
-            <svg width={20} height={10}><line x1={0} y1={5} x2={20} y2={5}
-              stroke={c} strokeWidth={dash?1.5:2.5} strokeDasharray={dash?'4,3':undefined}/></svg>
+            <svg width={20} height={10}>
+              <line x1={0} y1={5} x2={20} y2={5} stroke={c} strokeWidth={dash?1.5:2.5}
+                strokeDasharray={dash?'4,3':undefined}/>
+            </svg>
             <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{l}</span>
           </div>
         ))}
@@ -887,7 +871,7 @@ function ProyeccionTab({data,metrics}){
         {l:'Portfolio total',v:fUSD(PROPS_BASE.reduce((s,p)=>s+getProp(p,data).totalUSD,0)),c:C.text},
         {l:'Fin base del plan',v:'Jun 2039',c:C.sub},
         {l:'Fin estimado real',v:comp?mStr(comp.y,comp.m):'—',c:compDelay>0?C.warning:C.success},
-        {l:'Delay total',v:compDelay>0?`+${compDelay} meses`:compDelay<0?`${Math.abs(compDelay)}m adelantado`:'Sin delay',
+        {l:'Delay total',v:compDelay>0?`+${compDelay}m`:compDelay<0?`${Math.abs(compDelay)}m adelantado`:'Sin delay',
          c:compDelay>0?C.warning:C.success,b:true},
       ].map(({l,v,c,b})=><StatRow key={l} label={l} value={v} color={c} bold={b}/>)}
     </Card>
@@ -895,14 +879,14 @@ function ProyeccionTab({data,metrics}){
   </div>;
 }
 
-// ─── MODALES ─────────────────────────────────────
+// ─── MODALES ─────────────────────────────────────────
 function Overlay({children,onClose}){
-  return<div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.5)',
+  return<div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.55)',
     zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
     <div onClick={e=>e.stopPropagation()} className="slide-up"
-      style={{background:C.white,borderRadius:'20px 20px 0 0',padding:'20px',
-      width:'100%',maxWidth:480,maxHeight:'90vh',overflowY:'auto',
-      paddingBottom:`calc(20px + env(safe-area-inset-bottom))`}}>
+      style={{background:C.white,borderRadius:'20px 20px 0 0',
+      padding:`20px 20px calc(20px + env(safe-area-inset-bottom))`,
+      width:'100%',maxWidth:480,maxHeight:'90vh',overflowY:'auto'}}>
       {children}
     </div>
   </div>;
@@ -911,7 +895,7 @@ function MHead({title,onClose}){
   return<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
     <div style={{fontFamily:C.head,fontSize:18,fontWeight:700,color:C.text}}>{title}</div>
     <button onClick={onClose} style={{background:C.border,border:'none',borderRadius:15,
-      width:30,height:30,cursor:'pointer',fontSize:14,color:C.sub,fontFamily:C.font}}>✕</button>
+      width:30,height:30,cursor:'pointer',fontSize:14,color:C.sub}}>✕</button>
   </div>;
 }
 function Field({label,children,sub}){
@@ -933,17 +917,17 @@ function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
     <MHead title={isEdit?'Editar Ahorro':'Registrar Ahorro'} onClose={onClose}/>
     <Field label="Título (opcional)">
       <input type="text" value={form.titulo||''} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))}
-        placeholder="Ej: Sueldo, Prima, Bono..." style={inputSt}/>
+        placeholder="Ej: Sueldo, Prima, Bono..." style={iSt}/>
     </Field>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
       <Field label="Año">
-        <select value={form.year||''} onChange={e=>setForm(f=>({...f,year:e.target.value}))} style={inputSt}>
+        <select value={form.year||''} onChange={e=>setForm(f=>({...f,year:e.target.value}))} style={iSt}>
           <option value="">Año</option>
           {Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}
         </select>
       </Field>
       <Field label="Mes">
-        <select value={form.month||''} onChange={e=>setForm(f=>({...f,month:e.target.value}))} style={inputSt}>
+        <select value={form.month||''} onChange={e=>setForm(f=>({...f,month:e.target.value}))} style={iSt}>
           <option value="">Mes</option>
           {MES.map((n,i)=><option key={i+1} value={i+1}>{n}</option>)}
         </select>
@@ -952,7 +936,7 @@ function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
     <Field label="Moneda">
       <select value={form.moneda||'ARS'}
         onChange={e=>setForm(f=>({...f,moneda:e.target.value,
-          trm:e.target.value==='COP'?String(data.trm_cop):String(data.trm_ars)}))} style={inputSt}>
+          trm:e.target.value==='COP'?String(data.trm_cop):String(data.trm_ars)}))} style={iSt}>
         <option value="ARS">Pesos Argentinos (ARS)</option>
         <option value="COP">Pesos Colombianos (COP)</option>
       </select>
@@ -960,19 +944,19 @@ function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
       <Field label={`Monto (${form.moneda||'ARS'})`}>
         <input type="number" value={form.local||''} onChange={e=>setForm(f=>({...f,local:e.target.value}))}
-          placeholder="0" style={inputSt}/>
+          placeholder="0" style={iSt}/>
       </Field>
       <Field label="TRM (por USD)">
         <input type="number" value={form.trm||''} onChange={e=>setForm(f=>({...f,trm:e.target.value}))}
-          placeholder="1500" style={inputSt}/>
+          placeholder="1500" style={iSt}/>
       </Field>
     </div>
     {usd>0&&<div style={{background:'#f8fafc',borderRadius:10,padding:12,marginBottom:13}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',justifyContent:'space-between'}}>
         <span style={{fontSize:13,color:C.sub,fontFamily:C.font}}>Equivalente USD</span>
         <span style={{fontSize:20,fontWeight:700,color:C.primary,fontFamily:C.head}}>{fUSD(usd)}</span>
       </div>
-      {th>0&&<div style={{marginTop:7,paddingTop:7,borderTop:`1px solid ${C.border}`,
+      {th>0&&<div style={{marginTop:6,paddingTop:6,borderTop:`1px solid ${C.border}`,
         display:'flex',justifyContent:'space-between',fontSize:13,fontFamily:C.font}}>
         <span style={{color:C.sub}}>Teórico del mes</span>
         <span style={{fontWeight:700,color:diff>=0?C.success:C.danger}}>
@@ -987,72 +971,97 @@ function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
 }
 
 function PaidModal({form,setForm,hito,onSave,onClose}){
-  if(!hito) return null;
+  if(!hito)return null;
   return<Overlay onClose={onClose}>
     <MHead title="Registrar Pago" onClose={onClose}/>
-    <div style={{background:hito.colorL,border:`1.5px solid ${hito.color}44`,borderRadius:10,
-      padding:12,marginBottom:13}}>
+    <div style={{background:hito.colorL,border:`1.5px solid ${hito.color}44`,borderRadius:10,padding:12,marginBottom:13}}>
       <div style={{fontSize:12,color:C.sub,fontFamily:C.font}}>{hito.propName}</div>
       <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:C.head,marginTop:1}}>{hito.label}</div>
-      <div style={{fontSize:15,fontWeight:700,color:hito.color,fontFamily:C.head,marginTop:3}}>
-        {fUSD(hito.usd)} USD (plan)
-      </div>
+      <div style={{fontSize:15,fontWeight:700,color:hito.color,fontFamily:C.head,marginTop:3}}>{fUSD(hito.usd)} USD</div>
     </div>
     <Field label="Monto pagado (USD)">
       <input type="number" value={form.amount||''} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}
-        placeholder={String(hito.usd)} style={inputSt}/>
+        placeholder={String(hito.usd)} style={iSt}/>
     </Field>
     <Field label="Fecha del pago (AAAA-MM)">
       <input type="text" value={form.date||''} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
-        placeholder="2026-09" style={inputSt}/>
+        placeholder="2026-09" style={iSt}/>
     </Field>
     <Btn onClick={onSave} fullWidth color={C.success}>✓ Confirmar Pago</Btn>
   </Overlay>;
 }
 
 function EditPropModal({propId,data,form,setForm,onSave,onClose}){
-  const pb=PROPS_BASE.find(p=>p.id===propId);
-  if(!pb) return null;
+  const pb=PROPS_BASE.find(p=>p.id===propId);if(!pb)return null;
   return<Overlay onClose={onClose}>
     <MHead title={`Editar — ${pb.name}`} onClose={onClose}/>
-    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,
-      padding:'8px 10px',background:pb.colorL,borderRadius:8,
-      border:`1.5px solid ${pb.color}44`}}>
-      <div style={{width:10,height:10,borderRadius:5,background:pb.color,flexShrink:0}}/>
-      <span style={{fontSize:12,color:C.sub,fontFamily:C.font}}>
-        Moneda base: {pb.moneda} · Cambiá los valores que necesites
-      </span>
-    </div>
-    <Field label="Nombre de la propiedad">
+    <Field label="Nombre">
       <input type="text" value={form.name||''} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
-        placeholder={pb.name} style={inputSt}/>
+        placeholder={pb.name} style={iSt}/>
     </Field>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
       <Field label="Valor total (USD)">
         <input type="number" value={form.totalUSD||''} onChange={e=>setForm(f=>({...f,totalUSD:e.target.value}))}
-          placeholder={String(pb.totalUSD)} style={inputSt}/>
+          placeholder={String(pb.totalUSD)} style={iSt}/>
       </Field>
       <Field label="Ingreso mensual (USD)">
         <input type="number" value={form.ingreso||''} onChange={e=>setForm(f=>({...f,ingreso:e.target.value}))}
-          placeholder={String(pb.ingreso)} style={inputSt}/>
+          placeholder={String(pb.ingreso)} style={iSt}/>
       </Field>
     </div>
-    <Field label="Comentario / Nota">
+    <Field label="Comentario">
       <input type="text" value={form.comentario||''} onChange={e=>setForm(f=>({...f,comentario:e.target.value}))}
-        placeholder={pb.comentario} style={inputSt}/>
+        placeholder={pb.comentario} style={iSt}/>
     </Field>
-    <div style={{display:'flex',gap:10,marginTop:4}}>
-      <Btn onClick={()=>{
-        const pb2=PROPS_BASE.find(p=>p.id===propId);
-        setForm({name:pb2.name,totalUSD:pb2.totalUSD,ingreso:pb2.ingreso,comentario:pb2.comentario});
-      }} secondary color={C.sub} fullWidth small>Restablecer</Btn>
+    <div style={{display:'flex',gap:10}}>
+      <Btn onClick={()=>setForm({name:pb.name,totalUSD:String(pb.totalUSD),
+        ingreso:String(pb.ingreso),comentario:pb.comentario})}
+        secondary color={C.sub} fullWidth small>Restablecer</Btn>
+      <Btn onClick={onSave} color={C.primary} fullWidth>Guardar</Btn>
+    </div>
+  </Overlay>;
+}
+
+function EditHitoModal({hito,propBase,form,setForm,onSave,onClose}){
+  if(!hito||!propBase)return null;
+  return<Overlay onClose={onClose}>
+    <MHead title="Editar Hito" onClose={onClose}/>
+    <div style={{background:propBase.colorL,border:`1.5px solid ${propBase.color}33`,
+      borderRadius:8,padding:'8px 11px',marginBottom:14,
+      display:'flex',alignItems:'center',gap:8}}>
+      <div style={{width:8,height:8,borderRadius:4,background:propBase.color,flexShrink:0}}/>
+      <span style={{fontSize:13,color:C.text,fontFamily:C.font,fontWeight:600}}>
+        {propBase.name}
+      </span>
+    </div>
+    <Field label="Nombre del hito">
+      <input type="text" value={form.label||''} onChange={e=>setForm(f=>({...f,label:e.target.value}))}
+        placeholder={hito.label} style={iSt}/>
+    </Field>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <Field label="Monto (USD)">
+        <input type="number" value={form.usd||''} onChange={e=>setForm(f=>({...f,usd:e.target.value}))}
+          placeholder={String(hito.usd)} style={iSt}/>
+      </Field>
+      <Field label="Fecha (AAAA-MM)">
+        <input type="text" value={form.date||''} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+          placeholder={hito.date} style={iSt}/>
+      </Field>
+    </div>
+    <div style={{background:'#f8fafc',borderRadius:8,padding:'9px 11px',marginBottom:13,
+      fontSize:12,color:C.sub,fontFamily:C.font,lineHeight:1.5}}>
+      Los cambios se reflejan automáticamente en el tab <b>Plan</b> y en los cálculos de delay.
+    </div>
+    <div style={{display:'flex',gap:10}}>
+      <Btn onClick={()=>setForm({label:hito.label,usd:String(hito.usd),date:hito.date})}
+        secondary color={C.sub} fullWidth small>Restablecer</Btn>
       <Btn onClick={onSave} color={C.primary} fullWidth>Guardar</Btn>
     </div>
   </Overlay>;
 }
 
 function ConfirmModal({msg,onConfirm,onCancel}){
-  return<div onClick={onCancel} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.5)',
+  return<div onClick={onCancel} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.55)',
     zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 20px'}}>
     <div onClick={e=>e.stopPropagation()} className="fade-in"
       style={{background:C.white,borderRadius:16,padding:22,maxWidth:340,width:'100%',
@@ -1066,7 +1075,7 @@ function ConfirmModal({msg,onConfirm,onCancel}){
   </div>;
 }
 
-// ─── NAV ─────────────────────────────────────────
+// ─── NAV ─────────────────────────────────────────────
 function BottomNav({tab,setTab}){
   const tabs=[
     {id:'inicio',icon:'🏠',l:'Inicio'},
@@ -1077,155 +1086,172 @@ function BottomNav({tab,setTab}){
   ];
   return<div style={{position:'fixed',bottom:0,left:0,right:0,maxWidth:480,margin:'0 auto',
     background:C.white,borderTop:`1px solid ${C.border}`,display:'flex',zIndex:100,
-    paddingBottom:'env(safe-area-inset-bottom)'}}>
+    paddingBottom:'env(safe-area-inset-bottom)',
+    boxShadow:'0 -2px 12px rgba(0,0,0,.06)'}}>
     {tabs.map(t=>(
       <button key={t.id} onClick={()=>setTab(t.id)}
-        style={{flex:1,padding:'8px 0 7px',border:'none',background:'none',cursor:'pointer',
+        style={{flex:1,padding:'10px 0 8px',border:'none',background:'none',cursor:'pointer',
         display:'flex',flexDirection:'column',alignItems:'center',gap:1,
-        color:tab===t.id?C.primary:C.muted,fontFamily:C.font}}>
+        color:tab===t.id?C.primary:C.muted,fontFamily:C.font,minHeight:56}}>
         <span style={{fontSize:18}}>{t.icon}</span>
         <span style={{fontSize:9,fontWeight:tab===t.id?700:400}}>{t.l}</span>
-        {tab===t.id&&<div style={{width:4,height:3,borderRadius:2,background:C.primary}}/>}
+        {tab===t.id&&<div style={{width:4,height:3,borderRadius:2,background:C.primary,marginTop:1}}/>}
       </button>
     ))}
   </div>;
 }
 
-// ─── APP ─────────────────────────────────────────
+// ─── APP ─────────────────────────────────────────────
 function App(){
-  // ── TODOS LOS HOOKS AL TOPE ──
-  const[tab,setTab]                     = useState('inicio');
-  const[data,setData]                   = useState(loadData);
-  const[modal,setModal]                 = useState(null);
-  const[savForm,setSavForm]             = useState({});
-  const[paidForm,setPaidForm]           = useState({});
-  const[propForm,setPropForm]           = useState({});
-  const[editingSav,setEditingSav]       = useState(null);
-  const[editingPropId,setEditingPropId] = useState(null);
-  const[selHito,setSelHito]             = useState(null);
-  const[confirmId,setConfirmId]         = useState(null);
-  const[planFilter,setPlanFilter]       = useState('todos');
+  // ── TODOS LOS HOOKS PRIMERO ──
+  const[tab,setTab]                     =useState('inicio');
+  const[data,setData]                   =useState(loadData);
+  const[modal,setModal]                 =useState(null);
+  const[savForm,setSavForm]             =useState({});
+  const[paidForm,setPaidForm]           =useState({});
+  const[propForm,setPropForm]           =useState({});
+  const[hitoForm,setHitoForm]           =useState({});
+  const[editingSav,setEditingSav]       =useState(null);
+  const[editingPropId,setEditingPropId] =useState(null);
+  const[editingHito,setEditingHito]     =useState(null);
+  const[editingHitoProp,setEditingHitoProp]=useState(null);
+  const[selHito,setSelHito]             =useState(null);
+  const[confirmId,setConfirmId]         =useState(null);
+  const[planFilter,setPlanFilter]       =useState('todos');
 
   useEffect(()=>{
     try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}
   },[data]);
 
-  const metrics = useMemo(()=>computeMetrics(data),[data]);
+  const metrics=useMemo(()=>computeMetrics(data),[data]);
 
   // ── HANDLERS AHORRO ──
-  const openAdd = useCallback(()=>{
+  const openAdd=useCallback(()=>{
     const now=new Date();
     setSavForm({year:String(now.getFullYear()),month:String(now.getMonth()+1),
       local:'',moneda:'ARS',trm:String(data.trm_ars),titulo:''});
-    setEditingSav(null);
-    setModal('saving');
+    setEditingSav(null);setModal('saving');
   },[data.trm_ars]);
 
-  const openEdit = useCallback(s=>{
+  const openEdit=useCallback(s=>{
     setSavForm({year:String(s.year),month:String(s.month),local:String(s.local),
       moneda:s.moneda||'ARS',trm:String(s.trm),titulo:s.titulo||''});
-    setEditingSav(s);
-    setModal('saving');
+    setEditingSav(s);setModal('saving');
   },[]);
 
-  const saveSaving = useCallback(()=>{
-    const year=parseInt(savForm.year), month=parseInt(savForm.month);
+  const saveSaving=useCallback(()=>{
+    const year=parseInt(savForm.year),month=parseInt(savForm.month);
     const local=parseFloat(String(savForm.local||'').replace(/[.,\s]/g,''))||0;
     const trm=parseFloat(savForm.trm)||1500;
-    if(!year||!month||!local) return;
-    const usd=local/trm;
-    const entry={id:editingSav?.id||`s${Date.now()}`,year,month,local,trm,usd,
+    if(!year||!month||!local)return;
+    const entry={id:editingSav?.id||`s${Date.now()}`,year,month,local,trm,usd:local/trm,
       moneda:savForm.moneda||'ARS',titulo:savForm.titulo||''};
     setData(d=>{
-      const newSav=editingSav
-        ?d.savings.map(s=>s.id===editingSav.id?entry:s)
-        :[...d.savings,entry];
-      const trmKey=savForm.moneda==='COP'?'trm_cop':'trm_ars';
-      return{...d,savings:newSav,[trmKey]:parseFloat(savForm.trm)||d[trmKey]};
+      const ns=editingSav?d.savings.map(s=>s.id===editingSav.id?entry:s):[...d.savings,entry];
+      const tk=savForm.moneda==='COP'?'trm_cop':'trm_ars';
+      return{...d,savings:ns,[tk]:parseFloat(savForm.trm)||d[tk]};
     });
     setModal(null);
   },[savForm,editingSav]);
 
   // ── HANDLERS PAGO ──
-  const openMarkPaid = useCallback(h=>{
+  const openMarkPaid=useCallback(h=>{
     const now=new Date();
     setSelHito(h);
-    setPaidForm({amount:String(h.usd),date:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`});
+    setPaidForm({amount:String(h.usd),
+      date:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`});
     setModal('paid');
   },[]);
 
-  const savePaid = useCallback(()=>{
+  const savePaid=useCallback(()=>{
     const amount=parseFloat(paidForm.amount)||0;
-    if(!amount||!paidForm.date||!selHito) return;
+    if(!amount||!paidForm.date||!selHito)return;
     setData(d=>({...d,paid:{...d.paid,[selHito.id]:{date:paidForm.date,amount_usd:amount}}}));
     setModal(null);
   },[paidForm,selHito]);
 
-  const unmarkPaid = useCallback(id=>{
-    if(data.paid[id]?.seeded) return;
+  const unmarkPaid=useCallback(id=>{
+    if(data.paid[id]?.seeded)return;
     setData(d=>{const p={...d.paid};delete p[id];return{...d,paid:p};});
   },[data.paid]);
 
-  // ── HANDLERS PROPIEDADES ──
-  const changeStatus = useCallback((propId,status)=>{
+  // ── HANDLERS PROPIEDAD ──
+  const changeStatus=useCallback((propId,status)=>{
     setData(d=>({...d,propStatus:{...d.propStatus,[propId]:status}}));
   },[]);
 
-  const openEditProp = useCallback(propId=>{
+  const openEditProp=useCallback(propId=>{
     const p=getProp(PROPS_BASE.find(x=>x.id===propId),data);
     setPropForm({name:p.name,totalUSD:String(p.totalUSD),
       ingreso:String(p.ingreso),comentario:p.comentario||''});
-    setEditingPropId(propId);
-    setModal('editProp');
+    setEditingPropId(propId);setModal('editProp');
   },[data]);
 
-  const savePropEdit = useCallback(()=>{
-    if(!editingPropId) return;
-    const ov={
+  const savePropEdit=useCallback(()=>{
+    if(!editingPropId)return;
+    setData(d=>({...d,propOverrides:{...d.propOverrides,[editingPropId]:{
+      ...(d.propOverrides?.[editingPropId]||{}),
       name:propForm.name||undefined,
       totalUSD:propForm.totalUSD!==''?parseFloat(propForm.totalUSD):undefined,
       ingreso:propForm.ingreso!==''?parseFloat(propForm.ingreso):undefined,
       comentario:propForm.comentario!==undefined?propForm.comentario:undefined,
-    };
-    setData(d=>({...d,propOverrides:{...d.propOverrides,[editingPropId]:{
-      ...(d.propOverrides?.[editingPropId]||{}), ...ov
     }}}));
     setModal(null);
   },[editingPropId,propForm]);
 
+  // ── HANDLERS HITO ──
+  const openEditHito=useCallback((hito,propBase)=>{
+    const ho=data.hitoOverrides?.[hito.id]||{};
+    setEditingHito(hito);
+    setEditingHitoProp(propBase);
+    setHitoForm({
+      label:ho.label||hito.label,
+      usd:String(ho.usd??hito.usd),
+      date:ho.date||hito.date,
+    });
+    setModal('editHito');
+  },[data.hitoOverrides]);
+
+  const saveHitoEdit=useCallback(()=>{
+    if(!editingHito)return;
+    const ov={};
+    if(hitoForm.label&&hitoForm.label!==editingHito.label) ov.label=hitoForm.label;
+    if(hitoForm.usd!=='') ov.usd=parseFloat(hitoForm.usd);
+    if(hitoForm.date&&hitoForm.date!==editingHito.date) ov.date=hitoForm.date;
+    setData(d=>({...d,hitoOverrides:{...d.hitoOverrides,
+      [editingHito.id]:{...(d.hitoOverrides?.[editingHito.id]||{}),...ov}
+    }}));
+    setModal(null);
+  },[editingHito,hitoForm]);
+
   // ── HANDLERS REORDEN ──
-  const moveHito = useCallback((id,dir)=>{
+  const moveHito=useCallback((id,dir)=>{
     setData(d=>{
       const pending=getOrderedPending(d);
       const order=pending.map(h=>h.id);
       const idx=order.indexOf(id);
-      if(dir==='up'&&idx>0) [order[idx-1],order[idx]]=[order[idx],order[idx-1]];
-      if(dir==='down'&&idx<order.length-1) [order[idx],order[idx+1]]=[order[idx+1],order[idx]];
+      if(dir==='up'&&idx>0)[order[idx-1],order[idx]]=[order[idx],order[idx-1]];
+      if(dir==='down'&&idx<order.length-1)[order[idx],order[idx+1]]=[order[idx+1],order[idx]];
       return{...d,hitoOrder:order};
     });
   },[]);
 
   // ── RENDER ──
+  const NAV_H = 'calc(72px + env(safe-area-inset-bottom))';
+
   return<div style={{maxWidth:480,margin:'0 auto',minHeight:'100svh',background:C.bg,
-    fontFamily:C.font,color:C.text,paddingBottom:75,overflowX:'hidden'}}>
+    fontFamily:C.font,color:C.text,paddingBottom:NAV_H,overflowX:'hidden'}}>
 
-    {tab==='inicio'&&<InicioTab metrics={metrics} onAddSaving={openAdd}/>}
-    {tab==='ahorros'&&<AhorrosTab data={data} metrics={metrics}
-      onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmId(id)}/>}
-    {tab==='propiedades'&&<PropiedadesTab data={data}
-      onChangeStatus={changeStatus} onEditProp={openEditProp}/>}
-    {tab==='plan'&&<PlanTab data={data} metrics={metrics}
-      planFilter={planFilter} setPlanFilter={setPlanFilter}
-      onMarkPaid={openMarkPaid} onUnmark={unmarkPaid} onMoveHito={moveHito}/>}
-    {tab==='proyeccion'&&<ProyeccionTab data={data} metrics={metrics}/>}
+    {tab==='inicio'     &&<InicioTab      metrics={metrics} data={data} onAddSaving={openAdd}/>}
+    {tab==='ahorros'    &&<AhorrosTab     data={data} metrics={metrics} onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmId(id)}/>}
+    {tab==='propiedades'&&<PropiedadesTab data={data} onChangeStatus={changeStatus} onEditProp={openEditProp} onEditHito={openEditHito}/>}
+    {tab==='plan'       &&<PlanTab        data={data} metrics={metrics} planFilter={planFilter} setPlanFilter={setPlanFilter} onMarkPaid={openMarkPaid} onUnmark={unmarkPaid} onMoveHito={moveHito}/>}
+    {tab==='proyeccion' &&<ProyeccionTab  data={data} metrics={metrics}/>}
 
-    {modal==='saving'&&<SavingModal form={savForm} setForm={setSavForm} data={data}
-      onSave={saveSaving} onClose={()=>setModal(null)} isEdit={!!editingSav}/>}
-    {modal==='paid'&&<PaidModal form={paidForm} setForm={setPaidForm}
-      hito={selHito} onSave={savePaid} onClose={()=>setModal(null)}/>}
-    {modal==='editProp'&&<EditPropModal propId={editingPropId} data={data}
-      form={propForm} setForm={setPropForm}
-      onSave={savePropEdit} onClose={()=>setModal(null)}/>}
+    {modal==='saving'   &&<SavingModal   form={savForm}  setForm={setSavForm}  data={data}  onSave={saveSaving}   onClose={()=>setModal(null)} isEdit={!!editingSav}/>}
+    {modal==='paid'     &&<PaidModal     form={paidForm} setForm={setPaidForm} hito={selHito} onSave={savePaid}   onClose={()=>setModal(null)}/>}
+    {modal==='editProp' &&<EditPropModal propId={editingPropId} data={data} form={propForm} setForm={setPropForm} onSave={savePropEdit} onClose={()=>setModal(null)}/>}
+    {modal==='editHito' &&<EditHitoModal hito={editingHito} propBase={editingHitoProp} form={hitoForm} setForm={setHitoForm} onSave={saveHitoEdit} onClose={()=>setModal(null)}/>}
     {confirmId&&<ConfirmModal msg="¿Eliminar este registro de ahorro?"
       onConfirm={()=>{setData(d=>({...d,savings:d.savings.filter(s=>s.id!==confirmId)}));setConfirmId(null);}}
       onCancel={()=>setConfirmId(null)}/>}
