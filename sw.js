@@ -1,4 +1,4 @@
-const CACHE = 'retiro-v4';
+const CACHE = 'retiro-v5';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
