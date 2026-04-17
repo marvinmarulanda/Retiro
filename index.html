@@ -186,13 +186,35 @@ function getAllHitos(data){
   return result.sort((a,b)=>a.date.localeCompare(b.date));
 }
 
+// Merge an existing ordered list with new hitos, inserting each new one
+// at the correct chronological position within the existing order.
+function mergeHitoOrder(existingOrder, allPendingHitos){
+  const byId=Object.fromEntries(allPendingHitos.map(h=>[h.id,h]));
+  // Keep only ids that still exist as pending
+  const valid=existingOrder.filter(id=>byId[id]);
+  const inOrder=new Set(valid);
+  // New hitos not yet in order, sorted by date
+  const newH=allPendingHitos.filter(h=>!inOrder.has(h.id)).sort((a,b)=>a.date.localeCompare(b.date));
+  const result=[...valid];
+  for(const nh of newH){
+    let idx=result.length;
+    for(let i=0;i<result.length;i++){
+      const eh=byId[result[i]];
+      if(eh&&eh.date>nh.date){idx=i;break;}
+    }
+    result.splice(idx,0,nh.id);
+  }
+  return result;
+}
+
 function getOrderedPending(data){
   const allH=getAllHitos(data);
   const pIds=new Set(Object.keys(data.paid));
   const pending=allH.filter(h=>!pIds.has(h.id));
-  const order=data.hitoOrder||[];
-  return[...pending].sort((a,b)=>{
-    const ia=order.indexOf(a.id),ib=order.indexOf(b.id);
+  // Merge existing manual order with any new hitos at their date position
+  const merged=mergeHitoOrder(data.hitoOrder||[],pending);
+  return pending.sort((a,b)=>{
+    const ia=merged.indexOf(a.id),ib=merged.indexOf(b.id);
     if(ia===-1&&ib===-1)return a.date.localeCompare(b.date);
     if(ia===-1)return 1;if(ib===-1)return-1;return ia-ib;
   });
@@ -641,6 +663,19 @@ function PropiedadesTab({data,onChangeStatus,onEditProp,onEditHito,onAddHito,onR
   const allProps=getAllProps(data);
   const totalPortfolio=allProps.reduce((s,p)=>s+p.totalUSD,0);
   const totalIngresos=allProps.reduce((s,p)=>s+p.ingreso,0);
+
+  // Sort props by earliest PENDING hito date so new properties appear in chronological position
+  const removals=new Set(data.hitoRemovals||[]);
+  function earliestPendingDate(p){
+    const allH=[
+      ...(p.hitos||[]).filter(h=>h.date&&!removals.has(h.id)&&!pIds.has(h.id)),
+      ...(data.hitoAdditions?.[p.id]||[]).filter(h=>!removals.has(h.id)&&!pIds.has(h.id))
+    ];
+    if(!allH.length) return '9999-99'; // fully paid → bottom
+    return allH.map(h=>{const ho=data.hitoOverrides?.[h.id]||{};return ho.date||h.date;}).sort()[0];
+  }
+  const sortedProps=[...allProps].sort((a,b)=>earliestPendingDate(a).localeCompare(earliestPendingDate(b)));
+  const isBase=id=>PROPS_BASE.some(p=>p.id===id);
   return<div className="fade-in">
     <PageHeader title="Propiedades" sub={`${allProps.length} inmuebles · ${fUSD(totalPortfolio)}`}/>
     <Card style={{marginTop:12}}>
@@ -649,22 +684,12 @@ function PropiedadesTab({data,onChangeStatus,onEditProp,onEditHito,onAddHito,onR
         <div><div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>Ingresos futuros/mes</div><div style={{fontSize:20,fontWeight:700,color:C.success,fontFamily:C.head,marginTop:2}}>{fUSD(totalIngresos)}</div></div>
       </div>
     </Card>
-    {/* Base props */}
-    {PROPS_BASE.map(pb=>{
-      const p={...pb,...(()=>{const ov=data.propOverrides?.[pb.id]||{};return{name:ov.name??pb.name,totalUSD:ov.totalUSD??pb.totalUSD,ingreso:ov.ingreso??pb.ingreso,comentario:ov.comentario??pb.comentario};})()};
-      return<PropCard key={p.id} p={p} isBase data={data} pIds={pIds}
+    {sortedProps.map(p=>(
+      <PropCard key={p.id} p={p} isBase={isBase(p.id)} data={data} pIds={pIds}
         onChangeStatus={onChangeStatus} onEditProp={onEditProp}
         onEditHito={onEditHito} onAddHito={onAddHito}
-        onRemoveHito={onRemoveHito} onDeleteProp={onDeleteProp}/>;
-    })}
-    {/* Custom props */}
-    {(data.customProps||[]).map(pb=>{
-      const p={...pb,...(()=>{const ov=data.propOverrides?.[pb.id]||{};return{name:ov.name??pb.name,totalUSD:ov.totalUSD??pb.totalUSD,ingreso:ov.ingreso??pb.ingreso,comentario:ov.comentario??pb.comentario};})()};
-      return<PropCard key={p.id} p={p} isBase={false} data={data} pIds={pIds}
-        onChangeStatus={onChangeStatus} onEditProp={onEditProp}
-        onEditHito={onEditHito} onAddHito={onAddHito}
-        onRemoveHito={onRemoveHito} onDeleteProp={onDeleteProp}/>;
-    })}
+        onRemoveHito={onRemoveHito} onDeleteProp={onDeleteProp}/>
+    ))}
     {/* Nueva propiedad */}
     <div style={{padding:'4px 12px 16px'}}>
       <button onClick={onNewProp}
@@ -1156,8 +1181,9 @@ function App(){
       comentario,color,colorL,defStatus:'Sin Iniciar',hitos:builtHitos};
     setData(d=>{
       const updated={...d,customProps:[...(d.customProps||[]),newProp],propStatus:{...d.propStatus,[propId]:'Sin Iniciar'}};
-      // Re-init hitoOrder so new hitos slot in by date
-      updated.hitoOrder=getOrderedPending(updated).map(h=>h.id);
+      // Get ALL pending hitos after adding the new prop, then merge preserving manual order
+      const allPending=getAllHitos(updated).filter(h=>!new Set(Object.keys(updated.paid)).has(h.id));
+      updated.hitoOrder=mergeHitoOrder(d.hitoOrder||[],allPending);
       return updated;
     });
     setModal(null);
