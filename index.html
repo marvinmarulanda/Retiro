@@ -253,7 +253,11 @@ function loadData(){
     SEEDED_IDS.forEach(id=>{if(!d.paid[id])d.paid[id]={seeded:true};});
     PROPS_BASE.forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]=p.defStatus;});
     (d.customProps||[]).forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]='Sin Iniciar';});
-    if(!d.hitoOrder||d.hitoOrder.length===0)d.hitoOrder=getOrderedPending(d).map(h=>h.id);
+    // ALWAYS rebuild hitoOrder sorted by date so new/custom props land in the right position.
+    // Manual reorder via ↑↓ lasts for the current session only.
+    const _pIds=new Set(Object.keys(d.paid));
+    const _pending=getAllHitos(d).filter(h=>!_pIds.has(h.id));
+    d.hitoOrder=_pending.sort((a,b)=>a.date.localeCompare(b.date)).map(h=>h.id);
     return d;
   }catch(e){
     const d={...DEF};
