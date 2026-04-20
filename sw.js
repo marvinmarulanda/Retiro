@@ -1,5 +1,5 @@
-const CACHE = 'retiro-v6';
-const ASSETS = ['./', './index.html', './manifest.json'];
+const CACHE = 'retiro-v1';
+const ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
