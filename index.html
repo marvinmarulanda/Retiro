@@ -152,9 +152,13 @@ function installmentDeductionForMonth(y,m,data){
   });
   return total;
 }
-// Effective savings in a month after installment deductions
+// Effective savings in a month: applies user override first, then subtracts installments
 function mSavEffective(y,m,data){
-  return Math.max(0, mSav(y,m)-installmentDeductionForMonth(y,m,data));
+  const ym=`${y}-${String(m).padStart(2,'0')}`;
+  const base=(data.savingsOverrides&&data.savingsOverrides[ym]!==undefined)
+    ? data.savingsOverrides[ym]
+    : mSav(y,m);
+  return Math.max(0, base - installmentDeductionForMonth(y,m,data));
 }
 // Get installment plan for a hito id
 function getPlanForHito(hitoId,data){
@@ -260,16 +264,11 @@ function computePaymentDates(data){
   const ordPending=getOrderedPending(data);
   const rt=data.savings.reduce((s,e)=>s+e.usd,0);
   const np=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
-  // Also subtract installment amounts already committed (paid months) from balance
-  const instPaid=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled')
-    .reduce((s,p)=>{
-      // Each confirmed month reduces available balance (they were spent)
-      return s+paidMonthsCount(p)*p.amountPerMonth;
-    },0);
-  let bal=rt-np-instPaid;
+  // Balance = actual savings - non-seeded payments already made. Installments are future commitments,
+  // they reduce future monthly capacity via mSavEffective, NOT the current balance.
+  let bal=rt-np;
   let cy=nY,cm=nM;
   const result={};
-  // Exclude hitos that are being handled by an active/paused installment plan
   const installmentHitoIds=new Set(
     (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
   );
@@ -277,14 +276,14 @@ function computePaymentDates(data){
   let it=0;
   while(queue.length>0&&it++<1000){
     const r=addM(cy,cm,1);cy=r.y;cm=r.m;
-    bal+=mSavEffective(cy,cm,data);
+    bal+=mSavEffective(cy,cm,data); // already deducts installments
     while(queue.length>0&&bal>=queue[0].usd){const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};}
   }
   ordPending.filter(h=>h.rental).forEach(h=>{const d=pDate(h.date);if(d)result[h.id]={y:d.y,m:d.m};});
-  // For installment hitos: project completion date
+  // For installment hitos: project completion from now
   (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').forEach(p=>{
-    const remaining=p.totalMonths-paidMonthsCount(p);
-    const completionDt=addM(nY,nM,remaining);
+    const remaining=Math.max(0,p.totalMonths-paidMonthsCount(p));
+    const completionDt=remaining>0?addM(nY,nM,remaining):{y:nY,m:nM};
     result[p.hitoId]={y:completionDt.y,m:completionDt.m,isInstallment:true};
   });
   return result;
@@ -293,7 +292,8 @@ function computePaymentDates(data){
 // ─── STORAGE ─────────────────────────────────────
 const DEF={trm_ars:1500,trm_cop:3700,savings:[],paid:{},propStatus:{},
            propOverrides:{},hitoOverrides:{},hitoOrder:[],
-           hitoAdditions:{},hitoRemovals:[],customProps:[],installmentPlans:[]};
+           hitoAdditions:{},hitoRemovals:[],customProps:[],
+           installmentPlans:[],savingsOverrides:{}};
 function loadData(){
   try{
     const s=localStorage.getItem(KEY);
@@ -302,6 +302,7 @@ function loadData(){
     if(!d.hitoRemovals)d.hitoRemovals=[];
     if(!d.customProps)d.customProps=[];
     if(!d.installmentPlans)d.installmentPlans=[];
+    if(!d.savingsOverrides)d.savingsOverrides={};
     SEEDED_IDS.forEach(id=>{if(!d.paid[id])d.paid[id]={seeded:true};});
     PROPS_BASE.forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]=p.defStatus;});
     (d.customProps||[]).forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]='Sin Iniciar';});
@@ -329,7 +330,7 @@ function computeMetrics(data){
   const nextHito=savingsPending[0]||null;
   const realTotal=data.savings.reduce((s,e)=>s+e.usd,0);
   const nonSeededPaid=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
-  const realBalance=realTotal-nonSeededPaid;
+  const realBalance=realTotal-nonSeededPaid; // balance available for next lump-sum payment
   const thTotal=theorCumul(nY,nM);
   const savGap=realTotal-thTotal;
   const monthTheo=mSav(nY,nM);
@@ -434,14 +435,21 @@ const MANUAL=[
 • Ingresás el monto en pesos y la TRM del día; la app calcula USD automáticamente.
 • Podés agregar título (Sueldo, Prima, Bono…).
 • Editar o eliminar cualquier registro.
-• Tabla de referencia con el teórico de cada mes del año.`},
+• Tabla de referencia con el teórico de cada mes del año (tocá cualquier mes para editarlo).
+• ⚙ Modificar capacidad de un mes específico: sobrescribí la capacidad esperada para cualquier mes futuro (ej: mes con prima = $15.000, mes con gasto extra = $1.000). Esto afecta las fechas proyectadas de todos los hitos. Los meses modificados aparecen en naranja en la tabla y como etiquetas activas.`},
   {icon:'🏢',t:'Propiedades',b:`Vista y edición de cada inmueble.
 • Botón ✏️ (encabezado): edita nombre, valor total, ingreso mensual y comentario. "↩ Restablecer" devuelve los valores originales.
 • Selector de estado con color: Pagado (verde), En Curso (naranja), Sin Iniciar (rojo).
 • Botón ✏️ en cada hito: cambia nombre, monto y fecha.
+• Botón 📅 Cuotas junto al monto de un hito: activá un plan de pagos mensuales.
+  · Configurás monto/mes, número de cuotas y mes de inicio.
+  · El hito sale de la cola normal. Tu capacidad efectiva se reduce ese monto cada mes.
+  · Desde Inicio confirmás cada cuota. Al completar todas, el hito se marca pagado automáticamente.
+  · Desde ⚙ Gestionar (en Inicio) podés editar meses/cuota/fecha, pausar, reactivar o cancelar.
+• Botón ↩ Revertir en hitos pagados por error: los desmarca y devuelve el saldo.
 • Botón ➕ "Agregar hito": añade un nuevo plazo de pago a esa propiedad.
 • Botón 🗑️ en hitos no históricos: elimina ese plazo.
-• Botón 🏠 "Nueva Propiedad": crea un bien nuevo con nombre, moneda, valor total, ingresos, color y hitos propios. Al insertarse, el motor reprograma automáticamente todos los pagos siguientes según tu capacidad de ahorro.`},
+• Botón 🏠 "Nueva Propiedad": crea un bien nuevo con nombre, moneda, valor total, ingresos, color y hitos propios.`},
   {icon:'📋',t:'Plan de Pagos',b:`Lista completa de hitos pagados y pendientes.
 • Filtros por estado o por propiedad.
 • Cada hito muestra: 📅 fecha del plan original y ⟶ fecha proyectada según tu ahorro real actual.
@@ -701,10 +709,17 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
 }
 
 // ─── TAB AHORROS ─────────────────────────────────
-function AhorrosTab({data,metrics,onAdd,onEdit,onDelete}){
+function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride}){
   const sorted=[...data.savings].sort((a,b)=>b.year-a.year||(b.month-a.month));
   const avg=sorted.length?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
-  const nM=new Date().getMonth()+1;
+  const now=new Date(),nM=now.getMonth()+1,nY=now.getFullYear();
+  const[showOv,setShowOv]=React.useState(false);
+  const[ovY,setOvY]=React.useState(String(nY));
+  const[ovM,setOvM]=React.useState(String(nM));
+  const[ovAmt,setOvAmt]=React.useState('');
+  const ovKey=`${ovY}-${String(ovM).padStart(2,'0')}`;
+  const existOv=(data.savingsOverrides||{})[ovKey];
+  const ovEntries=Object.entries(data.savingsOverrides||{}).sort();
   return<div className="fade-in">
     <PageHeader title="Ahorros" sub="Registro mensual · ARS y COP" action={<Btn onClick={onAdd} small>+ Agregar</Btn>}/>
     <Card style={{marginTop:12}}>
@@ -715,14 +730,68 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete}){
       </div>
     </Card>
     <Card>
-      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:8,fontFamily:C.font}}>Capacidad teórica mensual</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:3}}>
-        {MES.map((m,i)=>{const v=MPLAN[i+1],isSpec=v>3000,isCur=nM===i+1;
-          return<div key={m} style={{padding:'5px 2px',textAlign:'center',background:isCur?C.primaryL:isSpec?C.warningL:C.border2,borderRadius:4}}>
-            <div style={{fontSize:9,color:C.sub,fontFamily:C.font}}>{m}</div>
-            <div style={{fontSize:10,fontWeight:isSpec?700:600,color:isSpec?C.warning:isCur?C.primary:C.text,fontFamily:C.font}}>{v>=1000?`${(v/1000).toFixed(0)}K`:`${v}`}</div>
-          </div>;})}
+      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:8,fontFamily:C.font}}>
+        Capacidad mensual {ovEntries.length>0&&<span style={{color:C.warning}}>({ovEntries.length} modificados)</span>}
       </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:3,marginBottom:10}}>
+        {MES.map((m,i)=>{
+          const v=MPLAN[i+1],isSpec=v>3000,isCur=nM===i+1;
+          const ovYM=`${nY}-${String(i+1).padStart(2,'0')}`;
+          const hasOv=(data.savingsOverrides||{})[ovYM]!==undefined;
+          const dispVal=hasOv?(data.savingsOverrides[ovYM]):v;
+          return<div key={m} style={{padding:'5px 2px',textAlign:'center',cursor:'pointer',
+            background:isCur?C.primaryL:hasOv?C.warningL:isSpec?'#fef3c7':C.border2,borderRadius:4}}
+            onClick={()=>{setOvY(String(nY));setOvM(String(i+1));setShowOv(true);setOvAmt('');}}>
+            <div style={{fontSize:9,color:C.sub,fontFamily:C.font}}>{m}</div>
+            <div style={{fontSize:10,fontWeight:700,color:hasOv?C.warning:isSpec?C.warning:isCur?C.primary:C.text,fontFamily:C.font}}>
+              {dispVal>=1000?`${(dispVal/1000).toFixed(0)}K`:`${dispVal}`}
+            </div>
+          </div>;
+        })}
+      </div>
+      <button onClick={()=>setShowOv(!showOv)}
+        style={{width:'100%',padding:'8px',background:C.border2,border:`1.5px solid ${C.border}`,
+        borderRadius:8,color:C.primary,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:C.font}}>
+        ⚙ {showOv?'Cerrar':'Modificar capacidad de un mes específico'}
+      </button>
+      {showOv&&<div style={{marginTop:10,padding:'12px',background:'#f8fafc',borderRadius:9,border:`1px solid ${C.border}`}}>
+        <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginBottom:10,lineHeight:1.5}}>
+          Sobrescribí la capacidad de ahorro de cualquier mes futuro. Útil para primas, bonos o meses con gastos extra. Impacta las fechas proyectadas de todos los hitos.
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+          <Field label="Año">
+            <select value={ovY} onChange={e=>setOvY(e.target.value)} style={{...iSt,fontSize:13}}>
+              {Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}
+            </select>
+          </Field>
+          <Field label="Mes">
+            <select value={ovM} onChange={e=>setOvM(e.target.value)} style={{...iSt,fontSize:13}}>
+              {MES.map((n,i)=><option key={i+1} value={i+1}>{n}</option>)}
+            </select>
+          </Field>
+        </div>
+        <Field label={`Nuevo monto (USD) · Teórico actual: ${fUSD(MPLAN[parseInt(ovM)]||3000)}`}>
+          <input type="number" value={ovAmt} onChange={e=>setOvAmt(e.target.value)}
+            placeholder={existOv!==undefined?String(existOv):`${MPLAN[parseInt(ovM)]||3000}`} style={{...iSt,fontSize:13}}/>
+        </Field>
+        {existOv!==undefined&&<div style={{fontSize:11,color:C.warning,marginBottom:8,fontFamily:C.font}}>
+          Override actual: {fUSD(existOv)} para {MES[parseInt(ovM)-1]} {ovY}
+        </div>}
+        <div style={{display:'flex',gap:8}}>
+          <Btn onClick={()=>{if(ovAmt){onSetOverride(ovKey,parseFloat(ovAmt));setOvAmt('');}}} color={C.primary} small disabled={!ovAmt}>Guardar</Btn>
+          {existOv!==undefined&&<Btn onClick={()=>{onSetOverride(ovKey,null);setOvAmt('');}} secondary color={C.danger} small>Eliminar</Btn>}
+        </div>
+      </div>}
+      {/* Active overrides list */}
+      {ovEntries.length>0&&<div style={{marginTop:8,display:'flex',flexWrap:'wrap',gap:4}}>
+        {ovEntries.map(([k,v])=>(
+          <span key={k} style={{fontSize:11,fontWeight:600,color:C.warning,background:C.warningL,
+            padding:'3px 8px',borderRadius:12,fontFamily:C.font,cursor:'pointer'}}
+            onClick={()=>{const[y,m]=k.split('-');setOvY(y);setOvM(String(parseInt(m)));setShowOv(true);}}>
+            {k}: {fUSD(v)} ×
+          </span>
+        ))}
+      </div>}
     </Card>
     {sorted.length===0?(<div style={{textAlign:'center',padding:'40px 20px'}}>
       <div style={{fontSize:40,marginBottom:12}}>💰</div>
@@ -1295,38 +1364,97 @@ function InstallmentSetupModal({hito,propBase,form,setForm,onSave,onClose}){
 
 function InstallmentManageModal({plan,onAction,onClose}){
   if(!plan)return null;
+  const[editing,setEditing]=React.useState(false);
+  const[editForm,setEditForm]=React.useState({
+    amountPerMonth:String(plan.amountPerMonth),
+    totalMonths:String(plan.totalMonths),
+    startDate:plan.startDate,
+  });
   const paid=paidMonthsCount(plan);
   const remaining=plan.totalMonths-paid;
   const isComplete=planIsComplete(plan);
+  // Compute end date
+  const{y:sy,m:sm}=pDate(plan.startDate);
+  const endDt=addM(sy,sm,plan.totalMonths-1);
+  const endDate=`${MES[endDt.m-1]} ${endDt.y}`;
+  const newTotal=parseInt(editForm.totalMonths)||plan.totalMonths;
+  const newAmt=parseFloat(editForm.amountPerMonth)||plan.amountPerMonth;
+  const newEnd=(()=>{const{y:sy2,m:sm2}=pDate(editForm.startDate||plan.startDate);const e=addM(sy2,sm2,newTotal-1);return`${MES[e.m-1]} ${e.y}`;})();
   return<Overlay onClose={onClose}>
     <MH title="Gestionar plan de cuotas" onClose={onClose}/>
-    <div style={{background:C.primaryL,borderRadius:10,padding:'12px',marginBottom:14}}>
-      <div style={{fontSize:15,fontWeight:700,color:C.text,fontFamily:C.head}}>{plan.propName}</div>
-      <div style={{fontSize:13,color:C.sub,fontFamily:C.font,marginTop:2}}>{plan.label}</div>
-      <div style={{fontSize:13,fontWeight:700,color:C.primary,fontFamily:C.font,marginTop:6}}>
-        {fUSD(plan.amountPerMonth)}/mes · {paid}/{plan.totalMonths} cuotas confirmadas
-      </div>
-      {plan.status==='paused'&&<div style={{fontSize:12,color:C.warning,fontFamily:C.font,marginTop:3}}>⏸ Plan pausado actualmente</div>}
-      {isComplete&&<div style={{fontSize:12,color:C.success,fontFamily:C.font,marginTop:3}}>✓ Plan completado</div>}
-    </div>
-    <div style={{background:C.border2,borderRadius:10,padding:'12px',marginBottom:14}}>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-        {[{l:'Cuota mensual',v:fUSD(plan.amountPerMonth)},{l:'Total cuotas',v:plan.totalMonths},
-          {l:'Pagadas',v:paid},{l:'Pendientes',v:remaining},
-          {l:'Total plan',v:fUSD(plan.amountPerMonth*plan.totalMonths)},
-          {l:'Inicio',v:plan.startDate}].map(({l,v})=>(
-          <div key={l} style={{padding:'6px 0',borderBottom:`1px solid ${C.border}`}}>
+    {/* Summary */}
+    <div style={{background:C.primaryL,borderRadius:10,padding:'12px',marginBottom:12}}>
+      <div style={{fontSize:15,fontWeight:700,color:C.text,fontFamily:C.head}}>{plan.propName} · {plan.label}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginTop:8}}>
+        {[
+          {l:'Cuota mensual',v:fUSD(plan.amountPerMonth)},
+          {l:'Total cuotas',v:`${plan.totalMonths} meses`},
+          {l:'Inicio',v:`${MES[(pDate(plan.startDate).m)-1]} ${pDate(plan.startDate).y}`},
+          {l:'Fin previsto',v:endDate},
+          {l:'Pagadas',v:`${paid} de ${plan.totalMonths}`},
+          {l:'Faltan',v:`${remaining} meses`},
+        ].map(({l,v})=>(
+          <div key={l} style={{background:C.white,borderRadius:7,padding:'7px 9px'}}>
             <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>{l}</div>
             <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font,marginTop:1}}>{v}</div>
           </div>
         ))}
       </div>
+      <div style={{marginTop:8}}>
+        <Bar value={paid} max={plan.totalMonths}
+          color={plan.status==='paused'?C.warning:isComplete?C.success:C.primary} h={6}/>
+        <div style={{fontSize:10,color:C.sub,fontFamily:C.font,marginTop:3,textAlign:'right'}}>
+          {plan.totalMonths>0?((paid/plan.totalMonths)*100).toFixed(0):0}% completado
+        </div>
+      </div>
+      {plan.status==='paused'&&<div style={{fontSize:12,color:C.warning,fontWeight:700,marginTop:4}}>⏸ Plan pausado</div>}
+      {isComplete&&<div style={{fontSize:12,color:C.success,fontWeight:700,marginTop:4}}>✓ Plan completado</div>}
     </div>
-    {/* Historial de meses confirmados */}
+
+    {/* Edit section */}
+    {!isComplete&&(
+      <div style={{marginBottom:12}}>
+        <button onClick={()=>setEditing(!editing)}
+          style={{width:'100%',padding:'9px',background:C.border2,border:`1px solid ${C.border}`,
+          borderRadius:9,color:C.primary,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:C.font}}>
+          ✏️ {editing?'Cancelar edición':'Editar plan (cuotas, meses, fecha inicio)'}
+        </button>
+        {editing&&(
+          <div style={{background:'#f8fafc',borderRadius:10,padding:'12px',marginTop:8,border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:10,color:C.sub,fontWeight:700,textTransform:'uppercase',letterSpacing:.7,marginBottom:10,fontFamily:C.font}}>
+              Editar plan — los meses ya confirmados se mantienen
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+              <Field label="Cuota mensual (USD)">
+                <input type="number" value={editForm.amountPerMonth} onChange={e=>setEditForm(f=>({...f,amountPerMonth:e.target.value}))} style={{...iSt,fontSize:13}}/>
+              </Field>
+              <Field label="Total de meses">
+                <input type="number" value={editForm.totalMonths} onChange={e=>setEditForm(f=>({...f,totalMonths:e.target.value}))} style={{...iSt,fontSize:13}}/>
+              </Field>
+            </div>
+            <Field label="Fecha de inicio (AAAA-MM)">
+              <input type="text" value={editForm.startDate} onChange={e=>setEditForm(f=>({...f,startDate:e.target.value}))} style={{...iSt,fontSize:13}}/>
+            </Field>
+            {editForm.startDate&&newTotal>0&&(
+              <div style={{background:C.primaryL,borderRadius:7,padding:'8px 10px',marginTop:4,fontSize:12,fontFamily:C.font,color:C.primary}}>
+                Nueva cuota: {fUSD(newAmt)}/mes · Fin previsto: {newEnd} · Total: {fUSD(newAmt*newTotal)}
+              </div>
+            )}
+            <div style={{marginTop:10}}>
+              <Btn onClick={()=>onAction('edit',editForm)} color={C.primary} fullWidth>
+                Guardar cambios
+              </Btn>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Confirmed months */}
     {(plan.paidMonths||[]).length>0&&(
-      <div style={{marginBottom:14}}>
+      <div style={{marginBottom:12}}>
         <div style={{fontSize:10,color:C.sub,fontWeight:700,textTransform:'uppercase',letterSpacing:.7,marginBottom:6,fontFamily:C.font}}>
-          Cuotas confirmadas
+          Cuotas confirmadas ({paid})
         </div>
         <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {[...(plan.paidMonths||[])].sort().map(ym=>(
@@ -1336,12 +1464,13 @@ function InstallmentManageModal({plan,onAction,onClose}){
         </div>
       </div>
     )}
-    {/* Acciones */}
+
+    {/* Actions */}
     {!isComplete&&(
-      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+      <div style={{display:'flex',flexDirection:'column',gap:7}}>
         {plan.status==='active'?(
           <Btn onClick={()=>onAction('pause')} fullWidth secondary color={C.warning}>
-            ⏸ Pausar plan (se deja de descontar de mi capacidad)
+            ⏸ Pausar — deja de descontar de mi capacidad mensual
           </Btn>
         ):(
           <Btn onClick={()=>onAction('resume')} fullWidth color={C.primary}>
@@ -1349,14 +1478,14 @@ function InstallmentManageModal({plan,onAction,onClose}){
           </Btn>
         )}
         <Btn onClick={()=>onAction('cancel')} fullWidth secondary color={C.danger}>
-          ✕ Cancelar plan (el hito vuelve a la cola normal)
+          ✕ Cancelar — el hito vuelve a la cola normal
         </Btn>
       </div>
     )}
     {isComplete&&(
       <div style={{background:C.successL,borderRadius:10,padding:'12px',textAlign:'center',
         fontSize:13,fontWeight:700,color:C.success,fontFamily:C.font}}>
-        ✓ Plan completado — el hito será marcado como pagado automáticamente
+        ✓ Plan completado — hito marcado como pagado automáticamente
       </div>
     )}
   </Overlay>;
@@ -1562,9 +1691,10 @@ function App(){
     setModal(null);
   },[instSetupHito,instSetupProp,instSetupForm]);
 
-  const manageInstallment=useCallback((plan,action,y,m)=>{
+  const manageInstallment=useCallback((plan,action,ef,m)=>{
     if(action==='confirm'){
-      const ym=`${y}-${String(m).padStart(2,'0')}`;
+      // ef = year (number), m = month (number)
+      const ym=`${ef}-${String(m).padStart(2,'0')}`;
       setData(d=>{
         const updated=d.installmentPlans.map(p=>{
           if(p.id!==plan.id)return p;
@@ -1572,11 +1702,9 @@ function App(){
           const complete=newPaidMonths.length>=p.totalMonths;
           return{...p,paidMonths:newPaidMonths,status:complete?'completed':p.status};
         });
-        // Auto-mark hito as paid if plan complete
         const updatedPlan=updated.find(p=>p.id===plan.id);
         if(updatedPlan&&planIsComplete(updatedPlan)&&!d.paid[updatedPlan.hitoId]){
-          const now=new Date();
-          const paidEntry={date:`${y}-${String(m).padStart(2,'0')}`,amount_usd:updatedPlan.amountPerMonth*updatedPlan.totalMonths};
+          const paidEntry={date:ym,amount_usd:updatedPlan.amountPerMonth*updatedPlan.totalMonths};
           return{...d,installmentPlans:updated,paid:{...d.paid,[updatedPlan.hitoId]:paidEntry}};
         }
         return{...d,installmentPlans:updated};
@@ -1584,6 +1712,16 @@ function App(){
     } else if(action==='manage'){
       setInstManagePlan(plan);
       setModal('instManage');
+    } else if(action==='edit'){
+      // ef = editForm object {amountPerMonth, totalMonths, startDate}
+      setData(d=>({...d,installmentPlans:d.installmentPlans.map(p=>{
+        if(p.id!==plan.id)return p;
+        const newMonths=parseInt(ef.totalMonths)||p.totalMonths;
+        const newAmt=parseFloat(ef.amountPerMonth)||p.amountPerMonth;
+        const newStart=ef.startDate||p.startDate;
+        return{...p,amountPerMonth:newAmt,totalMonths:newMonths,startDate:newStart};
+      })}));
+      setModal(null);
     } else if(action==='pause'){
       setData(d=>({...d,installmentPlans:d.installmentPlans.map(p=>p.id===plan.id?{...p,status:'paused'}:p)}));
       setModal(null);
@@ -1597,6 +1735,14 @@ function App(){
           setModal(null);setConfirmData(null);
         }});
     }
+  },[]);
+
+  const setMonthOverride=useCallback((key,value)=>{
+    setData(d=>{
+      const ov={...d.savingsOverrides};
+      if(value===null||value===undefined) delete ov[key]; else ov[key]=value;
+      return{...d,savingsOverrides:ov};
+    });
   },[]);
 
   const moveHito=useCallback((id,dir)=>{
@@ -1613,7 +1759,7 @@ function App(){
   const NAV_H='calc(74px + env(safe-area-inset-bottom))';
   return<div style={{maxWidth:480,margin:'0 auto',minHeight:'100svh',background:C.bg,fontFamily:C.font,color:C.text,paddingBottom:NAV_H,overflowX:'hidden'}}>
     {tab==='inicio'      &&<InicioTab metrics={metrics} onAddSaving={openAdd} onManual={()=>setModal('manual')} onManageInstallment={manageInstallment}/>}
-    {tab==='ahorros'     &&<AhorrosTab data={data} metrics={metrics} onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmData({msg:'¿Eliminar este registro de ahorro?',onConfirm:()=>{setData(d=>({...d,savings:d.savings.filter(s=>s.id!==id)}));setConfirmData(null);}})}/>}
+    {tab==='ahorros'     &&<AhorrosTab data={data} metrics={metrics} onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmData({msg:'¿Eliminar este registro de ahorro?',onConfirm:()=>{setData(d=>({...d,savings:d.savings.filter(s=>s.id!==id)}));setConfirmData(null);}})} onSetOverride={setMonthOverride}/>}
     {tab==='propiedades' &&<PropiedadesTab data={data} onChangeStatus={changeStatus} onEditProp={openEditProp} onEditHito={openEditHito} onAddHito={openAddHito} onRemoveHito={removeHito} onDeleteProp={deleteCustomProp} onNewProp={openNewProp} onUnmark={unmarkPaid} onSetupInstallment={openSetupInstallment}/>}
     {tab==='plan'        &&<PlanTab data={data} metrics={metrics} paymentDates={paymentDates} planFilter={planFilter} setPlanFilter={setPlanFilter} onMarkPaid={openMarkPaid} onUnmark={unmarkPaid} onMoveHito={moveHito} onEditHitoFromPlan={openEditHitoFromPlan}/>}
     {tab==='proyeccion'  &&<ProyeccionTab data={data} metrics={metrics}/>}
@@ -1626,7 +1772,7 @@ function App(){
     {modal==='addHito'  &&<AddHitoModal propBase={addingHitoProp} form={addHitoForm} setForm={setAddHitoForm} onSave={saveAddHito} onClose={()=>setModal(null)}/>}
     {modal==='newProp'  &&<NewPropModal form={newPropForm} setForm={setNewPropForm} onSave={saveNewProp} onClose={()=>setModal(null)}/>}
     {modal==='instSetup'&&<InstallmentSetupModal hito={instSetupHito} propBase={instSetupProp} form={instSetupForm} setForm={setInstSetupForm} onSave={saveInstallmentSetup} onClose={()=>setModal(null)}/>}
-    {modal==='instManage'&&<InstallmentManageModal plan={instManagePlan} onAction={a=>manageInstallment(instManagePlan,a)} onClose={()=>setModal(null)}/>}
+    {modal==='instManage'&&<InstallmentManageModal plan={instManagePlan} onAction={(a,ef)=>manageInstallment(instManagePlan,a,ef)} onClose={()=>setModal(null)}/>}
     {confirmData&&<ConfirmModal msg={confirmData.msg} onConfirm={confirmData.onConfirm} onCancel={()=>setConfirmData(null)}/>}
     <BottomNav tab={tab} setTab={setTab}/>
   </div>;
