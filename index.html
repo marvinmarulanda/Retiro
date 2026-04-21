@@ -332,13 +332,21 @@ function computeMetrics(data){
   const allH=getAllHitos(data);
   const pIds=new Set(Object.keys(data.paid));
   const ordPending=getOrderedPending(data);
-  const savingsPending=ordPending.filter(h=>!h.rental);
+  // Exclude hitos managed by installment plans from the lump-sum queue
+  const instHitoIds=new Set(
+    (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
+  );
+  const savingsPending=ordPending.filter(h=>!h.rental&&!instHitoIds.has(h.id));
   const nextHito=savingsPending[0]||null;
   const realTotal=data.savings.reduce((s,e)=>s+e.usd,0);
   const nonSeededPaid=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
-  const realBalance=realTotal-nonSeededPaid; // balance available for next lump-sum payment
+  const realBalance=realTotal-nonSeededPaid;
   const thTotal=theorCumul(nY,nM,data);
-  const savGap=realTotal-thTotal;
+  // savGap: net available vs what net should be.
+  // If user paid $17K and plan only expected $4K by now → they're "al día" (spent > expected, balance ≥ 0)
+  // If user saved nothing and plan expected $4K → they're $4K behind
+  const thNet=Math.max(0, thTotal - nonSeededPaid);
+  const savGap=realBalance - thNet;
   const monthTheo=baseCapacity(nY,nM,data);
   const monthInstDeduct=installmentDeductionForMonth(nY,nM,data);
   const monthEffective=Math.max(0,monthTheo-monthInstDeduct);
@@ -347,6 +355,7 @@ function computeMetrics(data){
   const allPropsM=getAllProps(data);
   const totalPortfolio=allPropsM.reduce((s,p)=>s+p.totalUSD,0);
   const progressValue=seededSum+realTotal;
+
   let nd=null;
   if(nextHito){
     const{y:py,m:pm}=pDate(nextHito.date);
@@ -369,17 +378,12 @@ function computeMetrics(data){
       while(r.length>0&&bal>=r[0].usd){bal-=r[0].usd;r.shift();}}
     comp={y:cy,m:cm};
   }
-  // Overall status: savings gap is primary signal; next-payment delay is secondary
+  // Overall: based on NET savGap (realBalance vs thNet)
   let overall='ok';
   if(savGap<-5000) overall='danger';
-  else if(savGap<-1000) overall='warning';
-  // If savings are on track (savGap>=0), only warn (never "danger") due to payment delay
-  if(overall==='ok'){
-    if(nd&&nd.months>6) overall='warning';
-    else if(nd&&(nd.months>0||nd.status==='warning')) overall='warning';
-  }
-  // If already in deficit, a big delay confirms danger
-  if(overall==='warning'&&savGap<-3000&&nd&&nd.months>3) overall='danger';
+  else if(savGap<-500) overall='warning';
+  if(overall==='ok'&&nd&&nd.months>6) overall='warning';
+  else if(overall==='ok'&&nd&&nd.months>0) overall='warning';
 
   // Active installment plans for current month
   const activePlans=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled');
@@ -530,9 +534,12 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
   const ahead=savGap>=0,mAhead=monthReal>=monthTheo;
   const pct=totalPortfolio>0?(progressValue/totalPortfolio*100):0;
   const delay=comp?mDiff(2039,6,comp.y,comp.m):0;
-  const st={ok:{c:C.success,bg:C.successL,msg:'Al día con el plan'},
-    warning:{c:C.warning,bg:C.warningL,msg:savGap>=0?'Adelantado en ahorro — revisá próximos pagos':'Posible retraso — revisar ahorro mensual'},
-    danger:{c:C.danger,bg:C.dangerL,msg:'Déficit de ahorro respecto al plan'}}[overall];
+  const st={
+    ok:{c:C.success,bg:C.successL,msg:'Al día con el plan'},
+    warning:{c:C.warning,bg:C.warningL,
+      msg:savGap>=0?'Saldo neto al día — próximos pagos con delay':'Atrasado en ahorro mensual'},
+    danger:{c:C.danger,bg:C.dangerL,msg:'Déficit de ahorro — revisá el plan'},
+  }[overall];
   return<div className="fade-in">
     <PageHeader title="Inicio" sub={`${MES_FULL[nM-1]} ${nY}`}
       action={<button onClick={onManual} style={{background:C.primaryL,border:`1.5px solid ${C.primary}44`,borderRadius:10,padding:'7px 11px',cursor:'pointer',fontSize:12,color:C.primary,fontWeight:700,fontFamily:C.font}}>📖 Manual</button>}/>
@@ -544,9 +551,9 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
         <div>
           <div style={{fontWeight:700,color:st.c,fontSize:14,fontFamily:C.font}}>{st.msg}</div>
           <div style={{fontSize:12,color:C.sub,marginTop:1,fontFamily:C.font}}>
-            {savGap>=0
-              ?`+${fUSD(Math.abs(savGap))} adelantado vs lo teórico`
-              :`${fUSD(Math.abs(savGap))} por debajo de lo teórico`}
+            {savGap>500?`Saldo disponible ${fUSD(realBalance)} · ${fUSD(savGap)} sobre lo esperado`
+              :savGap<-500?`${fUSD(Math.abs(savGap))} por debajo de lo esperado`
+              :`Saldo neto en línea con el plan`}
           </div>
         </div>
       </div>
@@ -710,9 +717,10 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
         ):(()=>{
           const bgC=nd.status==='ok'?C.successL:nd.status==='warning'?C.warningL:C.dangerL;
           const txC=nd.status==='ok'?C.success:nd.status==='warning'?C.warning:C.danger;
-          const msg=nd.months===0&&nd.status==='ok'?`✓ Llegás en fecha — ${mStr(nd.reachDate.y,nd.reachDate.m)}`
+          const metaDate=(()=>{const d=pDate(nd.hito.date);return mStr(d.y,d.m);})();
+          const msg=nd.months===0&&nd.status==='ok'?`✓ Llegás en fecha — saldo listo ${mStr(nd.reachDate.y,nd.reachDate.m)}`
             :nd.months===0?`⚠️ Llegás al pago pero vas ${fUSD(Math.abs(savGap))} atrasado en ahorro`
-            :`▲ Delay: ${nd.months}m — pago posible ${mStr(nd.reachDate.y,nd.reachDate.m)}`;
+            :`▲ ${nd.months}m de delay vs la meta (${metaDate}) — proyectado ${mStr(nd.reachDate.y,nd.reachDate.m)}`;
           const fa=Math.max(0,nd.hito.usd-realBalance),mp=Math.max(1,mDiff(nY,nM,...Object.values(pDate(nd.hito.date))));
           return<div style={{background:bgC,borderRadius:8,padding:'9px 12px',fontSize:13,fontFamily:C.font,fontWeight:600,color:txC}}>
             {msg}{nd.months>0&&<div style={{fontSize:11,marginTop:3,opacity:.9}}>~{fUSD(Math.ceil(fa/mp))}/mes para llegar en fecha</div>}
