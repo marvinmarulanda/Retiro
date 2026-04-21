@@ -129,9 +129,19 @@ const MES_FULL=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 const MPLAN={1:3000,2:3000,3:16333,4:3000,5:3000,6:7333,7:3000,8:3000,9:3000,10:3000,11:3000,12:7333};
 
 function mSav(y,m){if(y<2026||(y===2026&&m<4))return 0;return MPLAN[m]||3000;}
-function theorCumul(toY,toM){
+
+// Base capacity for a month: override if set, otherwise MPLAN
+function baseCapacity(y,m,data){
+  if(!data)return mSav(y,m);
+  const ym=`${y}-${String(m).padStart(2,'0')}`;
+  return(data.savingsOverrides&&data.savingsOverrides[ym]!==undefined)
+    ?data.savingsOverrides[ym]
+    :mSav(y,m);
+}
+// Cumulative theoretical savings up to a month, respecting overrides
+function theorCumul(toY,toM,data){
   let t=0,y=2026,m=4;
-  while(y<toY||(y===toY&&m<=toM)){t+=mSav(y,m);m++;if(m>12){y++;m=1;}}
+  while(y<toY||(y===toY&&m<=toM)){t+=baseCapacity(y,m,data);m++;if(m>12){y++;m=1;}}
   return t;
 }
 
@@ -154,11 +164,7 @@ function installmentDeductionForMonth(y,m,data){
 }
 // Effective savings in a month: applies user override first, then subtracts installments
 function mSavEffective(y,m,data){
-  const ym=`${y}-${String(m).padStart(2,'0')}`;
-  const base=(data.savingsOverrides&&data.savingsOverrides[ym]!==undefined)
-    ? data.savingsOverrides[ym]
-    : mSav(y,m);
-  return Math.max(0, base - installmentDeductionForMonth(y,m,data));
+  return Math.max(0, baseCapacity(y,m,data) - installmentDeductionForMonth(y,m,data));
 }
 // Get installment plan for a hito id
 function getPlanForHito(hitoId,data){
@@ -331,9 +337,9 @@ function computeMetrics(data){
   const realTotal=data.savings.reduce((s,e)=>s+e.usd,0);
   const nonSeededPaid=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
   const realBalance=realTotal-nonSeededPaid; // balance available for next lump-sum payment
-  const thTotal=theorCumul(nY,nM);
+  const thTotal=theorCumul(nY,nM,data);
   const savGap=realTotal-thTotal;
-  const monthTheo=mSav(nY,nM);
+  const monthTheo=baseCapacity(nY,nM,data);
   const monthInstDeduct=installmentDeductionForMonth(nY,nM,data);
   const monthEffective=Math.max(0,monthTheo-monthInstDeduct);
   const monthReal=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
@@ -363,9 +369,17 @@ function computeMetrics(data){
       while(r.length>0&&bal>=r[0].usd){bal-=r[0].usd;r.shift();}}
     comp={y:cy,m:cm};
   }
+  // Overall status: savings gap is primary signal; next-payment delay is secondary
   let overall='ok';
-  if(savGap<-5000||(nd&&nd.months>3))overall='danger';
-  else if(savGap<-1000||(nd&&nd.months>0)||(nd&&nd.status==='warning'))overall='warning';
+  if(savGap<-5000) overall='danger';
+  else if(savGap<-1000) overall='warning';
+  // If savings are on track (savGap>=0), only warn (never "danger") due to payment delay
+  if(overall==='ok'){
+    if(nd&&nd.months>6) overall='warning';
+    else if(nd&&(nd.months>0||nd.status==='warning')) overall='warning';
+  }
+  // If already in deficit, a big delay confirms danger
+  if(overall==='warning'&&savGap<-3000&&nd&&nd.months>3) overall='danger';
 
   // Active installment plans for current month
   const activePlans=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled');
@@ -517,8 +531,8 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
   const pct=totalPortfolio>0?(progressValue/totalPortfolio*100):0;
   const delay=comp?mDiff(2039,6,comp.y,comp.m):0;
   const st={ok:{c:C.success,bg:C.successL,msg:'Al día con el plan'},
-    warning:{c:C.warning,bg:C.warningL,msg:'Posible retraso — revisar ahorro mensual'},
-    danger:{c:C.danger,bg:C.dangerL,msg:'Retrasado respecto al plan'}}[overall];
+    warning:{c:C.warning,bg:C.warningL,msg:savGap>=0?'Adelantado en ahorro — revisá próximos pagos':'Posible retraso — revisar ahorro mensual'},
+    danger:{c:C.danger,bg:C.dangerL,msg:'Déficit de ahorro respecto al plan'}}[overall];
   return<div className="fade-in">
     <PageHeader title="Inicio" sub={`${MES_FULL[nM-1]} ${nY}`}
       action={<button onClick={onManual} style={{background:C.primaryL,border:`1.5px solid ${C.primary}44`,borderRadius:10,padding:'7px 11px',cursor:'pointer',fontSize:12,color:C.primary,fontWeight:700,fontFamily:C.font}}>📖 Manual</button>}/>
@@ -530,7 +544,9 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
         <div>
           <div style={{fontWeight:700,color:st.c,fontSize:14,fontFamily:C.font}}>{st.msg}</div>
           <div style={{fontSize:12,color:C.sub,marginTop:1,fontFamily:C.font}}>
-            {ahead?`+${fUSD(Math.abs(savGap))} sobre lo teórico`:`${fUSD(Math.abs(savGap))} bajo lo teórico`}
+            {savGap>=0
+              ?`+${fUSD(Math.abs(savGap))} adelantado vs lo teórico`
+              :`${fUSD(Math.abs(savGap))} por debajo de lo teórico`}
           </div>
         </div>
       </div>
@@ -730,21 +746,30 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride}){
       </div>
     </Card>
     <Card>
-      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:8,fontFamily:C.font}}>
-        Capacidad mensual {ovEntries.length>0&&<span style={{color:C.warning}}>({ovEntries.length} modificados)</span>}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',fontFamily:C.font}}>
+          Capacidad mensual {ovEntries.length>0&&<span style={{color:C.warning}}>({ovEntries.length} modif.)</span>}
+        </div>
+        <select value={ovY} onChange={e=>setOvY(e.target.value)}
+          style={{fontSize:11,padding:'3px 6px',borderRadius:6,border:`1px solid ${C.border}`,
+          background:C.border2,color:C.text,fontFamily:C.font,outline:'none'}}>
+          {Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}
+        </select>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:3,marginBottom:10}}>
         {MES.map((m,i)=>{
-          const v=MPLAN[i+1],isSpec=v>3000,isCur=nM===i+1;
-          const ovYM=`${nY}-${String(i+1).padStart(2,'0')}`;
-          const hasOv=(data.savingsOverrides||{})[ovYM]!==undefined;
-          const dispVal=hasOv?(data.savingsOverrides[ovYM]):v;
+          const mn=i+1;
+          const base=baseCapacity(parseInt(ovY),mn,data);
+          const hasOv=(data.savingsOverrides||{})[`${ovY}-${String(mn).padStart(2,'0')}`]!==undefined;
+          const isCur=parseInt(ovY)===nY&&nM===mn;
+          const isSpec=MPLAN[mn]>3000;
           return<div key={m} style={{padding:'5px 2px',textAlign:'center',cursor:'pointer',
             background:isCur?C.primaryL:hasOv?C.warningL:isSpec?'#fef3c7':C.border2,borderRadius:4}}
-            onClick={()=>{setOvY(String(nY));setOvM(String(i+1));setShowOv(true);setOvAmt('');}}>
+            onClick={()=>{setOvM(String(mn));setShowOv(true);setOvAmt('');}}>
             <div style={{fontSize:9,color:C.sub,fontFamily:C.font}}>{m}</div>
-            <div style={{fontSize:10,fontWeight:700,color:hasOv?C.warning:isSpec?C.warning:isCur?C.primary:C.text,fontFamily:C.font}}>
-              {dispVal>=1000?`${(dispVal/1000).toFixed(0)}K`:`${dispVal}`}
+            <div style={{fontSize:10,fontWeight:700,
+              color:hasOv?C.warning:isSpec?C.warning:isCur?C.primary:C.text,fontFamily:C.font}}>
+              {base>=1000?`${(base/1000).toFixed(0)}K`:`${base}`}
             </div>
           </div>;
         })}
@@ -799,7 +824,7 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride}){
       <div style={{fontSize:13,color:C.sub,marginTop:4}}>Plan inicia Abril 2026</div>
     </div>):(
       <div>{sorted.map(s=>{
-        const th=mSav(s.year,s.month),diff=s.usd-th,ok=diff>=0;
+        const th=baseCapacity(s.year,s.month,data),diff=s.usd-th,ok=diff>=0;
         return<div key={s.id} style={{margin:'0 12px 8px',background:C.white,borderRadius:12,padding:13,border:`1px solid ${C.border}`}} className="fade-in">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
             <div>
@@ -1223,7 +1248,7 @@ function NewPropModal({form,setForm,onSave,onClose}){
 function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
   const local=parseFloat(String(form.local||'').replace(/[.,\s]/g,''))||0;
   const trm=parseFloat(form.trm)||1500,usd=trm>0?local/trm:0;
-  const th=form.year&&form.month?mSav(parseInt(form.year),parseInt(form.month)):0,diff=usd-th;
+  const th=form.year&&form.month?baseCapacity(parseInt(form.year),parseInt(form.month),data):0,diff=usd-th;
   return<Overlay onClose={onClose}>
     <MH title={isEdit?'Editar Ahorro':'Registrar Ahorro'} onClose={onClose}/>
     <Field label="Título (opcional)"><input type="text" value={form.titulo||''} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="Ej: Sueldo, Prima, Bono..." style={iSt}/></Field>
