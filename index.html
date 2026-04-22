@@ -337,6 +337,13 @@ function loadData(){
     if(!d.installmentPlans)d.installmentPlans=[];
     if(!d.savingsOverrides)d.savingsOverrides={};
     if(!d.deletedBaseProps)d.deletedBaseProps=[];
+    // Clean up orphaned installment plans (hito was deleted but plan survived)
+    if(d.installmentPlans&&d.installmentPlans.length>0){
+      const validHitoIds=new Set(getAllHitos(d).map(h=>h.id));
+      d.installmentPlans=d.installmentPlans.filter(p=>
+        p.status==='cancelled'||validHitoIds.has(p.hitoId)
+      );
+    }
     SEEDED_IDS.forEach(id=>{if(!d.paid[id])d.paid[id]={seeded:true};});
     PROPS_BASE.forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]=p.defStatus;});
     (d.customProps||[]).forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]='Sin Iniciar';});
@@ -2288,8 +2295,8 @@ function App(){
           // Remove hito overrides
           const newHO={...d.hitoOverrides};
           hitoIds.forEach(id=>delete newHO[id]);
-          // Remove installment plans
-          const newPlans=(d.installmentPlans||[]).filter(p=>!hitoIds.has(p.hitoId));
+          // Remove installment plans — filter by hitoId OR propId as safety net
+          const newPlans=(d.installmentPlans||[]).filter(p=>!hitoIds.has(p.hitoId)&&p.propId!==propId);
           // Remove hito additions for this prop
           const newAd={...d.hitoAdditions};delete newAd[propId];
           // Remove from hitoOrder
