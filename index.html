@@ -806,9 +806,9 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride,onReset,on
   const avg=sorted.length?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
   const now=new Date(),nM=now.getMonth()+1,nY=now.getFullYear();
   const[showOv,setShowOv]=React.useState(false);
+  const[ovY,setOvY]=React.useState(String(nY)); // year shown in capacity table
   const[ovM,setOvM]=React.useState(String(nM));
   const[ovAmt,setOvAmt]=React.useState('');
-  const[ovEntries2,setOvEntries2]=React.useState([]); // [{year, amount}] multi-year rows
   const[pendingRows,setPendingRows]=React.useState([{year:String(nY),amount:''}]);
   const ovEntries=Object.entries(data.savingsOverrides||{}).sort();
   // Helper: add a row
