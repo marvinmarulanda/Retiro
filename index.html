@@ -155,7 +155,9 @@ function installmentDeductionForMonth(y,m,data){
     if(p.status==='cancelled')return;
     if(p.status==='paused')return;
     const start=p.startDate; // YYYY-MM
-    const{y:sy,m:sm}=pDate(start);
+    const _parsed=pDate(start);
+    if(!_parsed)return;
+    const{y:sy,m:sm}=_parsed;
     const endDt=addM(sy,sm,p.totalMonths-1);
     const end=`${endDt.y}-${String(endDt.m).padStart(2,'0')}`;
     if(ym>=start&&ym<=end) total+=p.amountPerMonth;
@@ -415,7 +417,7 @@ function computeMetrics(data){
     seededSum,totalPortfolio,progressValue,
     paidCount:allH.filter(h=>pIds.has(h.id)).length,
     totalHitos:allH.length,nextHito,nd,comp,overall,nY,nM,pIds,
-    activePlans,currentMonthInstallments};
+    activePlans,currentMonthInstallments,savingsPending};
 }
 
 // ─── COMPONENTES BASE ────────────────────────────
@@ -623,10 +625,10 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
         <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
           Compromisos en Cuotas
         </div>
-        {(()=>{
+        {(()=>{try{
           // Compute next month's deduction to warn if it changes
           const nextM=addM(nY,nM,1);
-          const nextDeduct=installmentDeductionForMonth(nextM.y,nextM.m,{...{installmentPlans:activePlans},...{installmentPlans:(data.installmentPlans||[])}});
+          const nextDeduct=installmentDeductionForMonth(nextM.y,nextM.m,data);
           const nextBase=baseCapacity(nextM.y,nextM.m,data);
           const nextEff=Math.max(0,nextBase-nextDeduct);
           const willChange=Math.abs(nextDeduct-monthInstDeduct)>50;
@@ -669,12 +671,13 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
               </div>;
             })()}
           </div>;
+        }catch(err){return null;}
         })()}
         {activePlans.map(plan=>{
           const paid=paidMonthsCount(plan);
           const curYM=`${nY}-${String(nM).padStart(2,'0')}`;
-          const planStart=pDate(plan.startDate);
-          const planEnd=addM(planStart.y,planStart.m,plan.totalMonths-1);
+          const planStart=pDate(plan.startDate)||{y:2026,m:1};
+          const planEnd=addM(planStart.y,planStart.m,Math.max(0,plan.totalMonths-1));
           const endYM=`${planEnd.y}-${String(planEnd.m).padStart(2,'0')}`;
           const inRange=curYM>=plan.startDate&&curYM<=endYM;
           const notStarted=curYM<plan.startDate;
@@ -1724,6 +1727,7 @@ function HistorialTab({data,metrics}){
     monthSavings[k]=(monthSavings[k]||0)+s.usd;
   });
 
+  if(!metrics||!data)return null;
   return<div className="fade-in">
     <PageHeader title="Mi Historial" sub={`${sorted.filter(e=>e.type!=='dream').length} eventos registrados`}/>
     {groupKeys.length===0?(
@@ -1790,7 +1794,7 @@ function HistorialTab({data,metrics}){
 
 // ─── TAB ESCENARIOS ──────────────────────────────
 function EscenariosTab({data,metrics}){
-  const{realBalance,nY,nM,comp,savingsPending}=metrics;
+  const{realBalance,nY,nM,comp}=metrics;
   const[extraMonthly,setExtraMonthly]=useState('0');
   const[extraMonths,setExtraMonths]=useState('3');
   const[oneTime,setOneTime]=useState('0');
@@ -1864,6 +1868,7 @@ function EscenariosTab({data,metrics}){
 
   const saving=baseComp&&scenComp?mDiff(scenComp.y,scenComp.m,baseComp.y,baseComp.m):0;
 
+  if(!metrics||!data)return null;
   return<div className="fade-in">
     <PageHeader title="Escenarios" sub="¿Qué pasa si ahorro más?"/>
     <Card style={{marginTop:12}}>
