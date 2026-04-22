@@ -806,12 +806,21 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride,onReset,on
   const avg=sorted.length?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
   const now=new Date(),nM=now.getMonth()+1,nY=now.getFullYear();
   const[showOv,setShowOv]=React.useState(false);
-  const[ovY,setOvY]=React.useState(String(nY));
   const[ovM,setOvM]=React.useState(String(nM));
   const[ovAmt,setOvAmt]=React.useState('');
-  const ovKey=`${ovY}-${String(ovM).padStart(2,'0')}`;
-  const existOv=(data.savingsOverrides||{})[ovKey];
+  const[ovEntries2,setOvEntries2]=React.useState([]); // [{year, amount}] multi-year rows
+  const[pendingRows,setPendingRows]=React.useState([{year:String(nY),amount:''}]);
   const ovEntries=Object.entries(data.savingsOverrides||{}).sort();
+  // Helper: add a row
+  const addRow=()=>setPendingRows(r=>[...r,{year:String(parseInt(r[r.length-1]?.year||nY)+1),amount:''}]);
+  const removeRow=i=>setPendingRows(r=>r.filter((_,j)=>j!==i));
+  const updateRow=(i,field,val)=>setPendingRows(r=>r.map((row,j)=>j===i?{...row,[field]:val}:row));
+  const openOvMonth=(mn)=>{setOvM(String(mn));setShowOv(true);setPendingRows([{year:String(nY),amount:''}]);};
+  // Compute keys to save from pending rows
+  const getKeysAndValues=()=>pendingRows.filter(r=>r.year&&r.amount).map(r=>({
+    key:`${r.year}-${String(parseInt(ovM)).padStart(2,'0')}`,
+    value:parseFloat(r.amount)
+  }));
   return<div className="fade-in">
     <PageHeader title="Ahorros" sub="Registro mensual · ARS y COP" action={<Btn onClick={onAdd} small>+ Agregar</Btn>}/>
     <Card style={{marginTop:12}}>
@@ -841,7 +850,7 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride,onReset,on
           const isSpec=MPLAN[mn]>3000;
           return<div key={m} style={{padding:'5px 2px',textAlign:'center',cursor:'pointer',
             background:isCur?C.primaryL:hasOv?C.warningL:isSpec?'#fef3c7':C.border2,borderRadius:4}}
-            onClick={()=>{setOvM(String(mn));setShowOv(true);setOvAmt('');}}>
+            onClick={()=>openOvMonth(mn)}>
             <div style={{fontSize:9,color:C.sub,fontFamily:C.font}}>{m}</div>
             <div style={{fontSize:10,fontWeight:700,
               color:hasOv?C.warning:isSpec?C.warning:isCur?C.primary:C.text,fontFamily:C.font}}>
@@ -856,43 +865,115 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride,onReset,on
         ⚙ {showOv?'Cerrar':'Modificar capacidad de un mes específico'}
       </button>
       {showOv&&<div style={{marginTop:10,padding:'12px',background:'#f8fafc',borderRadius:9,border:`1px solid ${C.border}`}}>
+        {/* Header: which month is being edited */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.head}}>
+            Capacidad para <span style={{color:C.primary}}>{MES_FULL[parseInt(ovM)-1]}</span>
+          </div>
+          <select value={ovM} onChange={e=>{setOvM(e.target.value);setPendingRows([{year:String(nY),amount:''}]);}}
+            style={{fontSize:12,padding:'4px 8px',borderRadius:7,border:`1px solid ${C.border}`,
+            background:C.white,color:C.text,fontFamily:C.font,outline:'none'}}>
+            {MES.map((n,i)=><option key={i+1} value={i+1}>{n}</option>)}
+          </select>
+        </div>
         <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginBottom:10,lineHeight:1.5}}>
-          Sobrescribí la capacidad de ahorro de cualquier mes futuro. Útil para primas, bonos o meses con gastos extra. Impacta las fechas proyectadas de todos los hitos.
+          Definí el monto por año. Podés agregar varios años de una vez — cada uno con un valor diferente.
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
-          <Field label="Año">
-            <select value={ovY} onChange={e=>setOvY(e.target.value)} style={{...iSt,fontSize:13}}>
-              {Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}
-            </select>
-          </Field>
-          <Field label="Mes">
-            <select value={ovM} onChange={e=>setOvM(e.target.value)} style={{...iSt,fontSize:13}}>
-              {MES.map((n,i)=><option key={i+1} value={i+1}>{n}</option>)}
-            </select>
-          </Field>
-        </div>
-        <Field label={`Nuevo monto (USD) · Teórico actual: ${fUSD(MPLAN[parseInt(ovM)]||3000)}`}>
-          <input type="number" value={ovAmt} onChange={e=>setOvAmt(e.target.value)}
-            placeholder={existOv!==undefined?String(existOv):`${MPLAN[parseInt(ovM)]||3000}`} style={{...iSt,fontSize:13}}/>
-        </Field>
-        {existOv!==undefined&&<div style={{fontSize:11,color:C.warning,marginBottom:8,fontFamily:C.font}}>
-          Override actual: {fUSD(existOv)} para {MES[parseInt(ovM)-1]} {ovY}
+        {/* Multi-year rows */}
+        {pendingRows.map((row,i)=>{
+          const existingVal=(data.savingsOverrides||{})[`${row.year}-${String(parseInt(ovM)).padStart(2,'0')}`];
+          return<div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:6,marginBottom:6,alignItems:'end'}}>
+            <Field label={i===0?'Año':''}>
+              <select value={row.year} onChange={e=>updateRow(i,'year',e.target.value)}
+                style={{...iSt,fontSize:13}}>
+                {Array.from({length:20},(_,j)=>2020+j).map(y=><option key={y} value={y}>{y}</option>)}
+              </select>
+            </Field>
+            <Field label={i===0?`Monto USD (base: ${fUSD(MPLAN[parseInt(ovM)]||3000)})`:''}>
+              <input type="number" value={row.amount} onChange={e=>updateRow(i,'amount',e.target.value)}
+                placeholder={existingVal!==undefined?String(existingVal):`${MPLAN[parseInt(ovM)]||3000}`}
+                style={{...iSt,fontSize:13}}/>
+            </Field>
+            <div style={{paddingBottom:2}}>
+              {pendingRows.length>1
+                ?<button onClick={()=>removeRow(i)} style={{background:C.dangerL,border:`1px solid ${C.danger}44`,borderRadius:7,padding:'8px 10px',cursor:'pointer',fontSize:13,color:C.danger}}>×</button>
+                :<div style={{width:38}}/>}
+            </div>
+          </div>;
+        })}
+        {/* Add year button */}
+        <button onClick={addRow}
+          style={{width:'100%',padding:'7px',background:C.border2,border:`1.5px dashed ${C.primary}88`,
+          borderRadius:7,cursor:'pointer',fontSize:12,fontWeight:600,color:C.primary,fontFamily:C.font,marginBottom:10}}>
+          + Agregar otro año
+        </button>
+        {/* Preview */}
+        {getKeysAndValues().length>0&&<div style={{background:C.primaryL,borderRadius:7,padding:'8px 10px',marginBottom:10,fontSize:11,fontFamily:C.font,color:C.primary}}>
+          Vas a guardar: {getKeysAndValues().map(({key,value})=>`${key}: ${fUSD(value)}`).join(' · ')}
         </div>}
         <div style={{display:'flex',gap:8}}>
-          <Btn onClick={()=>{if(ovAmt){onSetOverride(ovKey,parseFloat(ovAmt));setOvAmt('');}}} color={C.primary} small disabled={!ovAmt}>Guardar</Btn>
-          {existOv!==undefined&&<Btn onClick={()=>{onSetOverride(ovKey,null);setOvAmt('');}} secondary color={C.danger} small>Eliminar</Btn>}
+          <Btn onClick={()=>{
+            const pairs=getKeysAndValues();
+            if(pairs.length===0)return;
+            const keys=pairs.map(p=>p.key);
+            // Save each key-value pair (setMonthOverride handles arrays now)
+            pairs.forEach(({key,value})=>onSetOverride(key,value));
+            setPendingRows([{year:String(nY),amount:''}]);
+            setShowOv(false);
+          }} color={C.primary} small disabled={getKeysAndValues().length===0}>
+            💾 Guardar {getKeysAndValues().length>1?`(${getKeysAndValues().length} años)`:''}
+          </Btn>
+          <Btn onClick={()=>setShowOv(false)} secondary color={C.sub} small>Cancelar</Btn>
         </div>
       </div>}
       {/* Active overrides list */}
-      {ovEntries.length>0&&<div style={{marginTop:8,display:'flex',flexWrap:'wrap',gap:4}}>
-        {ovEntries.map(([k,v])=>(
-          <span key={k} style={{fontSize:11,fontWeight:600,color:C.warning,background:C.warningL,
-            padding:'3px 8px',borderRadius:12,fontFamily:C.font,cursor:'pointer'}}
-            onClick={()=>{const[y,m]=k.split('-');setOvY(y);setOvM(String(parseInt(m)));setShowOv(true);}}>
-            {k}: {fUSD(v)} ×
-          </span>
-        ))}
-      </div>}
+      {ovEntries.length>0&&(
+        <div style={{marginTop:8}}>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,textTransform:'uppercase',letterSpacing:.7,marginBottom:5,fontFamily:C.font}}>
+            Meses personalizados ({ovEntries.length})
+          </div>
+          {/* Group by month for clarity */}
+          {(()=>{
+            const byMonth={};
+            ovEntries.forEach(([k,v])=>{
+              const[y,m]=k.split('-');
+              const mn=parseInt(m);
+              if(!byMonth[mn])byMonth[mn]=[];
+              byMonth[mn].push({key:k,year:y,value:v});
+            });
+            return Object.entries(byMonth).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([mn,rows])=>(
+              <div key={mn} style={{marginBottom:6,background:C.warningL,borderRadius:9,padding:'7px 10px',
+                border:`1px solid ${C.warning}33`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                  <span style={{fontSize:12,fontWeight:700,color:C.warning,fontFamily:C.font}}>
+                    {MES_FULL[parseInt(mn)-1]}
+                  </span>
+                  <button onClick={()=>{
+                    setOvM(String(parseInt(mn)));
+                    setPendingRows(rows.map(r=>({year:r.year,amount:String(r.value)})));
+                    setShowOv(true);
+                  }} style={{fontSize:10,background:'transparent',border:`1px solid ${C.warning}66`,
+                    borderRadius:6,padding:'2px 7px',cursor:'pointer',color:C.warning,fontFamily:C.font,fontWeight:700}}>
+                    ✏️ Editar
+                  </button>
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                  {rows.sort((a,b)=>a.year.localeCompare(b.year)).map(({key,year,value})=>(
+                    <div key={key} style={{display:'flex',alignItems:'center',gap:3}}>
+                      <span style={{fontSize:11,fontWeight:600,color:C.warning,fontFamily:C.font}}>
+                        {year}: {fUSD(value)}
+                      </span>
+                      <button onClick={()=>onSetOverride(key,null)}
+                        style={{background:'transparent',border:'none',cursor:'pointer',
+                        fontSize:12,color:C.warning,padding:'0 2px',lineHeight:1}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
     </Card>
     {sorted.length===0?(<div style={{textAlign:'center',padding:'40px 20px'}}>
       <div style={{fontSize:40,marginBottom:12}}>💰</div>
@@ -2348,10 +2429,14 @@ function App(){
     }));
   },[]);
 
-  const setMonthOverride=useCallback((key,value)=>{
+  const setMonthOverride=useCallback((keysOrKey,value)=>{
     setData(d=>{
       const ov={...d.savingsOverrides};
-      if(value===null||value===undefined) delete ov[key]; else ov[key]=value;
+      // Support bulk: keysOrKey can be array of keys or single key
+      const keys=Array.isArray(keysOrKey)?keysOrKey:[keysOrKey];
+      keys.forEach(key=>{
+        if(value===null||value===undefined) delete ov[key]; else ov[key]=value;
+      });
       return{...d,savingsOverrides:ov};
     });
   },[]);
