@@ -65,56 +65,56 @@ const PROP_COLORS=[
 
 // ─── PROPIEDADES BASE ─────────────────────────────
 const PROPS_BASE=[
-  {id:'canario',name:'Canario',moneda:'COP',trm:3700,totalUSD:38000,
+  {id:'canario',dreamDate:'2022-01',name:'Canario',moneda:'COP',trm:3700,totalUSD:38000,
    color:'#b45309',colorL:'#fef3c7',defStatus:'Pagado',ingreso:0,comentario:'Pagado Nov 2025',
    hitos:[{id:'can1',label:'Pago Inicial',usd:11400,date:'2023-05',seeded:true},
           {id:'can2',label:'Finalización',usd:26600,date:'2025-11',seeded:true}]},
-  {id:'cabana',name:'Cabaña Trevelin',moneda:'ARS',trm:1500,totalUSD:110000,
+  {id:'cabana',dreamDate:'2023-06',name:'Cabaña Trevelin',moneda:'ARS',trm:1500,totalUSD:110000,
    color:'#059669',colorL:'#d1fae5',defStatus:'En Curso',ingreso:200,comentario:'Pago progresivo. Genera $200/mes',
    hitos:[{id:'cab1',label:'Construcción',usd:69000,date:'2026-01',seeded:true},
           {id:'cab2',label:'Resto progresivo',usd:41000,date:'2032-06',rental:true}]},
-  {id:'indigo',name:'Indigo',moneda:'COP',trm:3700,totalUSD:40500,
+  {id:'indigo',dreamDate:'2023-01',name:'Indigo',moneda:'COP',trm:3700,totalUSD:40500,
    color:'#7c3aed',colorL:'#ede9fe',defStatus:'En Curso',ingreso:180,comentario:'$19.800 restante cubierto por inquilino',
    hitos:[{id:'ind1',label:'Cuota Inicial',usd:12150,date:'2024-12',seeded:true},
           {id:'ind2',label:'Abono',usd:8550,date:'2026-03',seeded:true},
           {id:'ind3',label:'Final (inquilino)',usd:19800,date:'2033-11',rental:true}]},
-  {id:'chantilly',name:'Chantilly',moneda:'COP',trm:3700,totalUSD:32500,
+  {id:'chantilly',dreamDate:'2023-12',name:'Chantilly',moneda:'COP',trm:3700,totalUSD:32500,
    color:'#db2777',colorL:'#fce7f3',defStatus:'En Curso',ingreso:155,comentario:'Genera $155/mes tras pago final',
    hitos:[{id:'cha1',label:'Cuota Inicial',usd:9750,date:'2024-12',seeded:true},
           {id:'cha2',label:'Abono',usd:6450,date:'2026-04',seeded:true},
           {id:'cha3',label:'Finalización',usd:16300,date:'2026-09'}]},
-  {id:'casabsas',name:'Casa Bs As',moneda:'ARS',trm:1500,totalUSD:200000,
+  {id:'casabsas',dreamDate:'2025-01',name:'Casa Bs As',moneda:'ARS',trm:1500,totalUSD:200000,
    color:'#1d4ed8',colorL:'#dbeafe',defStatus:'Sin Iniciar',ingreso:0,comentario:'Vivienda personal. Costo neto -$350/mes',
    hitos:[{id:'cba1',label:'Cuota Inicial',usd:60000,date:'2027-10'},
           {id:'cba2',label:'Adelanto 1',usd:30000,date:'2030-07'},
           {id:'cba3',label:'Adelanto 2',usd:50000,date:'2034-09'},
           {id:'cba4',label:'Finalización',usd:60000,date:'2039-03'}]},
-  {id:'rdm',name:'Reserva del Mar',moneda:'COP',trm:3700,totalUSD:185000,
+  {id:'rdm',dreamDate:'2025-06',name:'Reserva del Mar',moneda:'COP',trm:3700,totalUSD:185000,
    color:'#0891b2',colorL:'#cffafe',defStatus:'Sin Iniciar',ingreso:820,comentario:'C.Inicial $55.200 en cuotas. Entrega Abr 2028',
    hitos:[{id:'rdm1',label:'Adelanto',usd:52000,date:'2028-08'},
           {id:'rdm2',label:'Adelanto 2',usd:60000,date:'2036-05'},
           {id:'rdm3',label:'Finalización',usd:17800,date:'2039-09'}]},
-  {id:'bogota1',name:'Bogotá 1',moneda:'COP',trm:3700,totalUSD:110000,
+  {id:'bogota1',dreamDate:'2026-01',name:'Bogotá 1',moneda:'COP',trm:3700,totalUSD:110000,
    color:'#ea580c',colorL:'#ffedd5',defStatus:'Sin Iniciar',ingreso:330,comentario:'Entrega 2 años tras inicial. Cuota $460/mes',
    hitos:[{id:'b1a',label:'Cuota Inicial',usd:33000,date:'2029-03'},
           {id:'b1b',label:'Adelanto 1',usd:30000,date:'2033-01'},
           {id:'b1c',label:'Adelanto 2',usd:30000,date:'2037-02'},
           {id:'b1d',label:'Finalización',usd:17000,date:'2039-06'}]},
-  {id:'quincho',name:'Quincho NQN',moneda:'ARS',trm:1500,totalUSD:60000,
+  {id:'quincho',dreamDate:'2027-01',name:'Quincho NQN',moneda:'ARS',trm:1500,totalUSD:60000,
    color:'#65a30d',colorL:'#ecfccb',defStatus:'Sin Iniciar',ingreso:500,comentario:'Genera $500/mes al completarse',
    hitos:[{id:'qnq1',label:'Inicio obra',usd:25000,date:'2031-01'},
           {id:'qnq2',label:'Adelanto',usd:25000,date:'2030-12'},
           {id:'qnq3',label:'Finalización',usd:10000,date:'2032-01'}]},
-  {id:'avicola',name:'Avícola',moneda:'COP',trm:3700,totalUSD:70000,
+  {id:'avicola',dreamDate:'2027-06',name:'Avícola',moneda:'COP',trm:3700,totalUSD:70000,
    color:'#16a34a',colorL:'#dcfce7',defStatus:'Sin Iniciar',ingreso:1200,comentario:'Genera $1.200/mes. Pago total',
    hitos:[{id:'avi1',label:'Pago Total',usd:70000,date:'2030-02'}]},
-  {id:'bsas2',name:'Bs As 2da',moneda:'ARS',trm:1500,totalUSD:150000,
+  {id:'bsas2',dreamDate:'2028-01',name:'Bs As 2da',moneda:'ARS',trm:1500,totalUSD:150000,
    color:'#9333ea',colorL:'#f3e8ff',defStatus:'Sin Iniciar',ingreso:330,comentario:'Cuota $460/mes',
    hitos:[{id:'ba2a',label:'Cuota Inicial',usd:45000,date:'2031-06'},
           {id:'ba2b',label:'Adelanto 1',usd:30000,date:'2033-06'},
           {id:'ba2c',label:'Adelanto 2',usd:40000,date:'2037-11'},
           {id:'ba2d',label:'Finalización',usd:35000,date:'2041-03'}]},
-  {id:'medellin',name:'Medellín',moneda:'COP',trm:3700,totalUSD:110000,
+  {id:'medellin',dreamDate:'2029-01',name:'Medellín',moneda:'COP',trm:3700,totalUSD:110000,
    color:'#dc2626',colorL:'#fee2e2',defStatus:'Sin Iniciar',ingreso:330,comentario:'Cuota $460/mes',
    hitos:[{id:'med1',label:'Cuota Inicial',usd:33000,date:'2032-06'},
           {id:'med2',label:'Adelanto 1',usd:30000,date:'2036-01'},
@@ -192,13 +192,17 @@ const mDiff=(y1,m1,y2,m2)=>(y2-y1)*12+(m2-m1);
 function getAllProps(data){
   const base=PROPS_BASE.map(p=>{
     const ov=data.propOverrides?.[p.id]||{};
+    const dreamDate=ov.dreamDate??p.dreamDate??(p.hitos[0]?.date||'2026-01');
     return{...p,name:ov.name??p.name,totalUSD:ov.totalUSD??p.totalUSD,
-      ingreso:ov.ingreso??p.ingreso,comentario:ov.comentario??p.comentario,isCustom:false};
+      ingreso:ov.ingreso??p.ingreso,comentario:ov.comentario??p.comentario,
+      dreamDate,isCustom:false};
   });
   const custom=(data.customProps||[]).map(p=>{
     const ov=data.propOverrides?.[p.id]||{};
+    const dreamDate=ov.dreamDate??p.dreamDate??(p.hitos[0]?.date||'2026-01');
     return{...p,name:ov.name??p.name,totalUSD:ov.totalUSD??p.totalUSD,
-      ingreso:ov.ingreso??p.ingreso,comentario:ov.comentario??p.comentario,isCustom:true};
+      ingreso:ov.ingreso??p.ingreso,comentario:ov.comentario??p.comentario,
+      dreamDate,isCustom:true};
   });
   return[...base,...custom];
 }
@@ -270,9 +274,11 @@ function computePaymentDates(data){
   const ordPending=getOrderedPending(data);
   const rt=data.savings.reduce((s,e)=>s+e.usd,0);
   const np=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
-  // Balance = actual savings - non-seeded payments already made. Installments are future commitments,
-  // they reduce future monthly capacity via mSavEffective, NOT the current balance.
-  let bal=rt-np;
+  // Include current month's unregistered capacity:
+  // If it's April and you've saved $0, the sim should assume you WILL save April's effective capacity.
+  const monthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
+  const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-monthSaved);
+  let bal=rt-np+curMonthRem;
   let cy=nY,cm=nM;
   const result={};
   const installmentHitoIds=new Set(
@@ -282,11 +288,10 @@ function computePaymentDates(data){
   let it=0;
   while(queue.length>0&&it++<1000){
     const r=addM(cy,cm,1);cy=r.y;cm=r.m;
-    bal+=mSavEffective(cy,cm,data); // already deducts installments
+    bal+=mSavEffective(cy,cm,data);
     while(queue.length>0&&bal>=queue[0].usd){const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};}
   }
   ordPending.filter(h=>h.rental).forEach(h=>{const d=pDate(h.date);if(d)result[h.id]={y:d.y,m:d.m};});
-  // For installment hitos: project completion from now
   (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').forEach(p=>{
     const remaining=Math.max(0,p.totalMonths-paidMonthsCount(p));
     const completionDt=remaining>0?addM(nY,nM,remaining):{y:nY,m:nM};
@@ -312,11 +317,14 @@ function loadData(){
     SEEDED_IDS.forEach(id=>{if(!d.paid[id])d.paid[id]={seeded:true};});
     PROPS_BASE.forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]=p.defStatus;});
     (d.customProps||[]).forEach(p=>{if(!d.propStatus[p.id])d.propStatus[p.id]='Sin Iniciar';});
-    // ALWAYS rebuild hitoOrder sorted by date so new/custom props land in the right position.
-    // Manual reorder via ↑↓ lasts for the current session only.
+    // Preserve manual hitoOrder; only insert NEW hitos at their date position
     const _pIds=new Set(Object.keys(d.paid));
     const _pending=getAllHitos(d).filter(h=>!_pIds.has(h.id));
-    d.hitoOrder=_pending.sort((a,b)=>a.date.localeCompare(b.date)).map(h=>h.id);
+    if(!d.hitoOrder||d.hitoOrder.length===0){
+      d.hitoOrder=_pending.sort((a,b)=>a.date.localeCompare(b.date)).map(h=>h.id);
+    } else {
+      d.hitoOrder=mergeHitoOrder(d.hitoOrder,_pending);
+    }
     return d;
   }catch(e){
     const d={...DEF};
@@ -354,16 +362,24 @@ function computeMetrics(data){
   const seededSum=allH.filter(h=>data.paid[h.id]?.seeded).reduce((s,h)=>s+h.usd,0);
   const allPropsM=getAllProps(data);
   const totalPortfolio=allPropsM.reduce((s,p)=>s+p.totalUSD,0);
-  const progressValue=seededSum+realTotal;
+  // progressValue: historical paid + savings + installment amounts already committed
+  const instCommitted=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled')
+    .reduce((s,p)=>s+paidMonthsCount(p)*p.amountPerMonth, 0);
+  const progressValue=seededSum+realTotal+instCommitted;
+
+  // Include current month's unregistered capacity in projection balance
+  const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
+  const curMonthRem=Math.max(0,monthEffective-curMonthSaved);
+  const projBalance=realBalance+curMonthRem; // balance including what we expect to save this month
 
   let nd=null;
   if(nextHito){
     const{y:py,m:pm}=pDate(nextHito.date);
     const planMo=mDiff(nY,nM,py,pm);
-    if(realBalance>=nextHito.usd){
+    if(projBalance>=nextHito.usd){
       nd={months:0,status:'ready',canPay:true,hito:nextHito,reachDate:{y:nY,m:nM}};
     }else{
-      let bal=realBalance,cy=nY,cm=nM,mo=0;
+      let bal=projBalance,cy=nY,cm=nM,mo=0;
       while(bal<nextHito.usd&&mo<480){const r=addM(cy,cm,1);cy=r.y;cm=r.m;bal+=mSavEffective(cy,cm,data);mo++;}
       const delay=Math.max(0,mo-Math.max(0,planMo));
       let status=delay===0?'ok':delay<=3?'warning':'danger';
@@ -373,7 +389,7 @@ function computeMetrics(data){
   }
   let comp=null;
   if(savingsPending.length>0){
-    let bal=realBalance,cy=nY,cm=nM,r=[...savingsPending],it=0;
+    let bal=projBalance,cy=nY,cm=nM,r=[...savingsPending],it=0;
     while(r.length>0&&it++<800){const nx=addM(cy,cm,1);cy=nx.y;cm=nx.m;bal+=mSavEffective(cy,cm,data);
       while(r.length>0&&bal>=r[0].usd){bal-=r[0].usd;r.shift();}}
     comp={y:cy,m:cm};
@@ -484,6 +500,12 @@ const MANUAL=[
 3. Al superar el monto de un hito, lo "paga" y registra esa fecha proyectada.
 4. Si agregás una propiedad nueva o modificás un hito, el motor recorre toda la cola y reajusta todas las fechas siguientes.
 5. Hitos "Por renta" (Cabaña resto, Indigo final) no consumen ahorro personal.`},
+  {icon:'🔁',t:'Reiniciar app',b:`Si querés empezar de cero con datos reales:
+1. Andá a Ahorros → al final encontrás la "Zona de reinicio".
+2. Confirmá el borrado: se eliminan ahorros, pagos manuales, planes de cuotas y overrides.
+3. Las propiedades e hitos base se conservan intactos.
+4. Podés registrar ahorros con fechas pasadas (desde 2020) para reconstruir tu historial real.
+5. Los planes de cuotas con fechas pasadas también funcionan — los meses anteriores quedan sin confirmar y podés marcarlos uno a uno o ignorarlos.`},
   {icon:'💡',t:'Tips',b:`Flujo mensual recomendado:
 1. Inicio de mes → verificá el teórico en Inicio.
 2. Cuando ahorrés → registralo en Ahorros con monto en ARS/COP y TRM.
@@ -601,45 +623,83 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
         <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
           Compromisos en Cuotas
         </div>
-        {monthInstDeduct>0&&(
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:12,
-            background:C.border2,borderRadius:9,padding:'9px 8px'}}>
-            <div style={{textAlign:'center'}}>
-              <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>Capacidad bruta</div>
-              <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.head,marginTop:1}}>{fUSD(monthTheo)}</div>
+        {(()=>{
+          // Compute next month's deduction to warn if it changes
+          const nextM=addM(nY,nM,1);
+          const nextDeduct=installmentDeductionForMonth(nextM.y,nextM.m,{...{installmentPlans:activePlans},...{installmentPlans:(data.installmentPlans||[])}});
+          const nextBase=baseCapacity(nextM.y,nextM.m,data);
+          const nextEff=Math.max(0,nextBase-nextDeduct);
+          const willChange=Math.abs(nextDeduct-monthInstDeduct)>50;
+          return<div style={{marginBottom:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,
+              background:C.border2,borderRadius:9,padding:'9px 8px'}}>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>Capacidad bruta</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.head,marginTop:1}}>{fUSD(monthTheo)}</div>
+              </div>
+              <div style={{textAlign:'center',borderLeft:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`}}>
+                <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>En cuotas</div>
+                <div style={{fontSize:13,fontWeight:700,color:monthInstDeduct>0?C.danger:C.muted,fontFamily:C.head,marginTop:1}}>
+                  {monthInstDeduct>0?`−${fUSD(monthInstDeduct)}`:'$0'}
+                </div>
+              </div>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>Libre p/ahorrar</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.success,fontFamily:C.head,marginTop:1}}>{fUSD(monthEffective)}</div>
+              </div>
             </div>
-            <div style={{textAlign:'center',borderLeft:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`}}>
-              <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>En cuotas</div>
-              <div style={{fontSize:13,fontWeight:700,color:C.danger,fontFamily:C.head,marginTop:1}}>−{fUSD(monthInstDeduct)}</div>
-            </div>
-            <div style={{textAlign:'center'}}>
-              <div style={{fontSize:10,color:C.sub,fontFamily:C.font}}>Libre p/ahorrar</div>
-              <div style={{fontSize:13,fontWeight:700,color:C.success,fontFamily:C.head,marginTop:1}}>{fUSD(monthEffective)}</div>
-            </div>
-          </div>
-        )}
+            {willChange&&<div style={{marginTop:6,background:C.warningL,borderRadius:7,padding:'6px 10px',
+              fontSize:11,color:C.warning,fontFamily:C.font,fontWeight:600}}>
+              ⚠️ Próximo mes ({mStr(nextM.y,nextM.m)}): cuotas {fUSD(nextDeduct)} → capacidad libre {fUSD(nextEff)}
+            </div>}
+            {(()=>{
+              // Warn about near-zero months in the next 12 months (e.g. Jan/Feb with big installments)
+              const lowMonths=[];
+              for(let i=1;i<=12;i++){
+                const fm=addM(nY,nM,i);
+                const eff=mSavEffective(fm.y,fm.m,data);
+                const base=baseCapacity(fm.y,fm.m,data);
+                if(base>=2000&&eff<200) lowMonths.push({...fm,eff,base});
+              }
+              if(lowMonths.length===0) return null;
+              return<div style={{marginTop:6,background:C.dangerL,borderRadius:7,padding:'6px 10px',fontSize:11,color:C.danger,fontFamily:C.font}}>
+                ⚠️ Meses con capacidad casi nula (cuotas absorben casi todo):{' '}
+                {lowMonths.map(m=>`${MES[m.m-1]} ${m.y} ($${m.eff} neto)`).join(', ')}.
+                Esto retrasa los pagos — considerá agregar un override de ahorro para esos meses.
+              </div>;
+            })()}
+          </div>;
+        })()}
         {activePlans.map(plan=>{
           const paid=paidMonthsCount(plan);
-          const pct2=plan.totalMonths>0?(paid/plan.totalMonths)*100:0;
           const curYM=`${nY}-${String(nM).padStart(2,'0')}`;
-          const inRange=(()=>{
-            const{y:sy,m:sm}=pDate(plan.startDate);
-            const endDt=addM(sy,sm,plan.totalMonths-1);
-            const end=`${endDt.y}-${String(endDt.m).padStart(2,'0')}`;
-            return curYM>=plan.startDate&&curYM<=end;
-          })();
+          const planStart=pDate(plan.startDate);
+          const planEnd=addM(planStart.y,planStart.m,plan.totalMonths-1);
+          const endYM=`${planEnd.y}-${String(planEnd.m).padStart(2,'0')}`;
+          const inRange=curYM>=plan.startDate&&curYM<=endYM;
+          const notStarted=curYM<plan.startDate;
           const confirmedThisMonth=isMonthConfirmed(plan,nY,nM);
           const isComplete=planIsComplete(plan);
-          const stC=plan.status==='paused'?C.warning:isComplete?C.success:C.primary;
+          const stC=plan.status==='paused'?C.warning:isComplete?C.success:notStarted?C.muted:C.primary;
           return<div key={plan.id} style={{marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${C.border2}`}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
               <div>
                 <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font}}>{plan.propName}</div>
                 <div style={{fontSize:12,color:C.sub,fontFamily:C.font}}>{plan.label}</div>
-                <div style={{fontSize:11,color:C.muted,fontFamily:C.font,marginTop:1}}>
+                <div style={{fontSize:11,color:C.muted,fontFamily:C.font,marginTop:2}}>
                   {fUSD(plan.amountPerMonth)}/mes · {paid}/{plan.totalMonths} cuotas
                   {plan.status==='paused'&&<span style={{color:C.warning,marginLeft:6,fontWeight:700}}>⏸ Pausado</span>}
                   {isComplete&&<span style={{color:C.success,marginLeft:6,fontWeight:700}}>✓ Completo</span>}
+                  {notStarted&&<span style={{color:C.muted,marginLeft:6}}>· Inicia {mStr(planStart.y,planStart.m)}</span>}
+                </div>
+                {/* Show start → end dates prominently */}
+                <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:2,display:'flex',gap:6,flexWrap:'wrap'}}>
+                  <span style={{background:C.border2,padding:'2px 6px',borderRadius:6}}>
+                    📅 {mStr(planStart.y,planStart.m)} → {mStr(planEnd.y,planEnd.m)}
+                  </span>
+                  {!notStarted&&!isComplete&&<span style={{background:C.primaryL,color:C.primary,padding:'2px 6px',borderRadius:6,fontWeight:700}}>
+                    Resta: {plan.totalMonths-paid} meses · {fUSD((plan.totalMonths-paid)*plan.amountPerMonth)}
+                  </span>}
                 </div>
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
@@ -721,9 +781,11 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
           const msg=nd.months===0&&nd.status==='ok'?`✓ Llegás en fecha — saldo listo ${mStr(nd.reachDate.y,nd.reachDate.m)}`
             :nd.months===0?`⚠️ Llegás al pago pero vas ${fUSD(Math.abs(savGap))} atrasado en ahorro`
             :`▲ ${nd.months}m de delay vs la meta (${metaDate}) — proyectado ${mStr(nd.reachDate.y,nd.reachDate.m)}`;
-          const fa=Math.max(0,nd.hito.usd-realBalance),mp=Math.max(1,mDiff(nY,nM,...Object.values(pDate(nd.hito.date))));
+          // Only show $/mes hint if delay > 0 and the date is in the future (not overdue)
+          const planInFuture=mDiff(nY,nM,...Object.values(pDate(nd.hito.date)))>0;
+          const fa=Math.max(0,nd.hito.usd-realBalance),mp=Math.max(2,mDiff(nY,nM,...Object.values(pDate(nd.hito.date))));
           return<div style={{background:bgC,borderRadius:8,padding:'9px 12px',fontSize:13,fontFamily:C.font,fontWeight:600,color:txC}}>
-            {msg}{nd.months>0&&<div style={{fontSize:11,marginTop:3,opacity:.9}}>~{fUSD(Math.ceil(fa/mp))}/mes para llegar en fecha</div>}
+            {msg}{nd.months>0&&planInFuture&&<div style={{fontSize:11,marginTop:3,opacity:.9}}>Necesitás ~{fUSD(Math.ceil(fa/mp))}/mes adicional para llegar en fecha · Capacidad libre actual: {fUSD(monthEffective)}</div>}
           </div>;
         })()}
       </Card>
@@ -733,7 +795,7 @@ function InicioTab({metrics,onAddSaving,onManual,onManageInstallment}){
 }
 
 // ─── TAB AHORROS ─────────────────────────────────
-function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride}){
+function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride,onReset,onExport,onImport}){
   const sorted=[...data.savings].sort((a,b)=>b.year-a.year||(b.month-a.month));
   const avg=sorted.length?sorted.slice(0,3).reduce((s,e)=>s+e.usd,0)/Math.min(3,sorted.length):0;
   const now=new Date(),nM=now.getMonth()+1,nY=now.getFullYear();
@@ -761,7 +823,7 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride}){
         <select value={ovY} onChange={e=>setOvY(e.target.value)}
           style={{fontSize:11,padding:'3px 6px',borderRadius:6,border:`1px solid ${C.border}`,
           background:C.border2,color:C.text,fontFamily:C.font,outline:'none'}}>
-          {Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}
+          {Array.from({length:20},(_,i)=>2020+i).map(y=><option key={y} value={y}>{y}</option>)}
         </select>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:3,marginBottom:10}}>
@@ -854,6 +916,31 @@ function AhorrosTab({data,metrics,onAdd,onEdit,onDelete,onSetOverride}){
       })}</div>
     )}
     <div style={{height:8}}/>
+    {/* Backup zone */}
+    <div style={{margin:'0 12px 8px',padding:'13px',background:C.border2,borderRadius:12,border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.text,fontFamily:C.font,marginBottom:4}}>📦 Backup de datos</div>
+      <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginBottom:10,lineHeight:1.5}}>
+        Exportá todos tus datos como archivo JSON. Importá para restaurar en otro dispositivo o navegador.
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <Btn onClick={onExport} color={C.primary} small fullWidth>⬇ Exportar backup</Btn>
+        <label style={{flex:1}}>
+          <div style={{padding:'7px 12px',background:C.white,border:`1.5px solid ${C.primary}`,borderRadius:9,
+            color:C.primary,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:C.font,textAlign:'center',lineHeight:'1.4'}}>
+            ⬆ Importar backup
+          </div>
+          <input type="file" accept=".json" onChange={onImport} style={{display:'none'}}/>
+        </label>
+      </div>
+    </div>
+    {/* Reset zone */}
+    <div style={{margin:'0 12px 16px',padding:'13px',background:C.dangerL,borderRadius:12,border:`1.5px solid ${C.danger}33`}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.danger,fontFamily:C.font,marginBottom:4}}>⚠️ Zona de reinicio</div>
+      <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginBottom:10,lineHeight:1.5}}>
+        Borra ahorros, pagos manuales, planes de cuotas y overrides de capacidad. Las propiedades e hitos se conservan pero vuelven a estado inicial. Útil para empezar de cero con datos reales.
+      </div>
+      <Btn onClick={onReset} color={C.danger} fullWidth small>🗑️ Reiniciar — borrar todos mis datos</Btn>
+    </div>
   </div>;
 }
 
@@ -877,6 +964,9 @@ function PropCard({p,isBase,data,pIds,onChangeStatus,onEditProp,onEditHito,onAdd
           {!isBase&&<span style={{fontSize:10,fontWeight:700,color:p.color,background:'rgba(255,255,255,.7)',padding:'2px 7px',borderRadius:12,fontFamily:C.font}}>nueva</span>}
         </div>
         <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:1}}>{p.moneda} · {fUSD(p.totalUSD)} total</div>
+        {p.dreamDate&&<div style={{fontSize:10,color:C.muted,fontFamily:C.font,marginTop:1}}>
+          🌱 Inicio del sueño: {(()=>{const d=pDate(p.dreamDate);return d?mStr(d.y,d.m):p.dreamDate;})()}
+        </div>}
       </div>
       <div style={{display:'flex',gap:5,alignItems:'center'}}>
         <select value={status} onChange={e=>onChangeStatus(p.id,e.target.value)}
@@ -977,7 +1067,8 @@ function PropiedadesTab({data,onChangeStatus,onEditProp,onEditHito,onAddHito,onR
     const all=[...baseH,...addH];
     return all.length?[...all].sort()[0]:'9999-99';
   }
-  const sortedProps=[...allProps].sort((a,b)=>earliestPendingDate(a).localeCompare(earliestPendingDate(b)));
+  // Sort by "fecha de inicio del sueño" (dreamDate) so oldest property appears first
+  const sortedProps=[...allProps].sort((a,b)=>(a.dreamDate||'9999').localeCompare(b.dreamDate||'9999'));
   const isBase=id=>PROPS_BASE.some(p=>p.id===id);
   return<div className="fade-in">
     <PageHeader title="Propiedades" sub={`${allProps.length} inmuebles · ${fUSD(totalPortfolio)}`}/>
@@ -1046,14 +1137,18 @@ function PlanTab({data,metrics,paymentDates,planFilter,setPlanFilter,onMarkPaid,
     <div style={{paddingBottom:8}}>
       {toShow.map(h=>{
         const paid=pIds.has(h.id),planDt=pDate(h.date),comp=!paid&&paymentDates[h.id];
-        const delay=comp&&planDt?mDiff(planDt.y,planDt.m,comp.y,comp.m):0;
+        // For installment hitos, delay is the completion timeline, not vs plan date
+        const isInstHito=!paid&&!!(data.installmentPlans||[]).find(p=>p.hitoId===h.id&&p.status!=='cancelled');
+        const instPlan=isInstHito?(data.installmentPlans||[]).find(p=>p.hitoId===h.id&&p.status!=='cancelled'):null;
+        const delay=comp&&planDt&&!isInstHito?mDiff(planDt.y,planDt.m,comp.y,comp.m):0;
         const{y:py,m:pm}=planDt||{y:0,m:0};
-        const isFirst=!paid&&ordPending[0]?.id===h.id;
+        // FIX: use metrics.nextHito (excludes installment hitos) not ordPending[0]
+        const isFirst=!paid&&metrics.nextHito?.id===h.id;
         const seeded=data.paid[h.id]?.seeded;
         const pendIdx=ordPending.findIndex(x=>x.id===h.id);
         return<div key={h.id} className="fade-in"
           style={{margin:'0 12px 7px',background:C.white,borderRadius:12,
-          border:`1.5px solid ${paid?h.color+'33':isFirst?h.color:C.border}`,opacity:seeded?.65:1}}>
+          border:`1.5px solid ${paid?h.color+'33':isFirst?h.color:isInstHito?C.primary+'44':C.border}`,opacity:seeded?.65:1}}>
           <div style={{padding:'11px 13px'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
               <div style={{flex:1,marginRight:8}}>
@@ -1061,22 +1156,39 @@ function PlanTab({data,metrics,paymentDates,planFilter,setPlanFilter,onMarkPaid,
                   <div style={{width:8,height:8,borderRadius:4,background:h.color}}/>
                   <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
                   {isFirst&&!paid&&<span style={{fontSize:10,fontWeight:700,color:C.primary,background:C.primaryL,padding:'2px 7px',borderRadius:20,fontFamily:C.font}}>Próximo</span>}
+                  {isInstHito&&<span style={{fontSize:10,fontWeight:700,color:'#0369a1',background:'#e0f2fe',padding:'2px 7px',borderRadius:20,fontFamily:C.font}}>📅 En cuotas</span>}
                   {h.rental&&!paid&&<span style={{fontSize:10,fontWeight:600,color:C.muted,background:C.border2,padding:'2px 7px',borderRadius:20,fontFamily:C.font}}>Por renta</span>}
-                  {!paid&&!isFirst&&showReorder&&pendIdx>=0&&<span style={{fontSize:10,color:C.muted,fontFamily:C.font}}>#{pendIdx+1}</span>}
+                  {!paid&&!isFirst&&!isInstHito&&showReorder&&pendIdx>=0&&<span style={{fontSize:10,color:C.muted,fontFamily:C.font}}>#{pendIdx+1}</span>}
                 </div>
                 <div style={{fontSize:15,fontWeight:700,color:paid?C.sub:C.text,fontFamily:C.head,textDecoration:paid?'line-through':'none'}}>{h.label}</div>
-                {!paid&&planDt&&<div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:3}}>
+                {/* Installment hito: show cuota progress */}
+                {isInstHito&&instPlan&&(
+                  <div style={{marginTop:4}}>
+                    <div style={{fontSize:11,color:C.sub,fontFamily:C.font}}>
+                      {fUSD(instPlan.amountPerMonth)}/mes · {paidMonthsCount(instPlan)}/{instPlan.totalMonths} cuotas
+                      {instPlan.status==='paused'&&<span style={{color:C.warning,marginLeft:4}}>⏸ Pausado</span>}
+                    </div>
+                    <div style={{fontSize:11,color:C.muted,fontFamily:C.font,marginTop:1}}>
+                      Inicio: {(()=>{const d=pDate(instPlan.startDate);return mStr(d.y,d.m);})()}
+                      {comp&&<span> · Fin proyectado: {mStr(comp.y,comp.m)}</span>}
+                    </div>
+                  </div>
+                )}
+                {/* Regular hito: show plan vs projected date */}
+                {!isInstHito&&!paid&&planDt&&<div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginTop:3}}>
                   <span>📅 {mStr(py,pm)}</span>
-                  {comp&&!h.rental&&<span style={{marginLeft:8,fontWeight:600,color:delay>0?C.danger:C.success}}>⟶ {mStr(comp.y,comp.m)}{delay>0?` (+${delay}m)`:' ✓'}</span>}
+                  {comp&&!h.rental&&<span style={{marginLeft:8,fontWeight:600,color:delay>0?C.danger:C.success}}>
+                    ⟶ {mStr(comp.y,comp.m)}{delay>0?` (+${delay}m)`:' ✓'}
+                  </span>}
                 </div>}
                 {paid&&data.paid[h.id]?.date&&!seeded&&<div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:2}}>Pagado {data.paid[h.id].date}</div>}
               </div>
               <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
                 <div style={{display:'flex',alignItems:'center',gap:6}}>
-                  {!paid&&<button onClick={()=>onEditHitoFromPlan(h)} style={{background:C.border2,border:`1px solid ${C.border}`,borderRadius:6,padding:'3px 7px',cursor:'pointer',fontSize:12,color:C.sub}}>✏️</button>}
-                  <div style={{fontSize:19,fontWeight:700,fontFamily:C.head,color:paid?C.success:isFirst?h.color:C.text}}>{fUSD(h.usd)}</div>
+                  {!paid&&!isInstHito&&<button onClick={()=>onEditHitoFromPlan(h)} style={{background:C.border2,border:`1px solid ${C.border}`,borderRadius:6,padding:'3px 7px',cursor:'pointer',fontSize:12,color:C.sub}}>✏️</button>}
+                  <div style={{fontSize:19,fontWeight:700,fontFamily:C.head,color:paid?C.success:isFirst?h.color:isInstHito?'#0369a1':C.text}}>{fUSD(h.usd)}</div>
                 </div>
-                {!paid&&showReorder&&pendIdx>=0&&(
+                {!paid&&!isInstHito&&showReorder&&pendIdx>=0&&(
                   <div style={{display:'flex',gap:3}}>
                     {['up','down'].map(dir=>{
                       const can=dir==='up'?pendIdx>0:pendIdx<ordPending.length-1;
@@ -1087,15 +1199,14 @@ function PlanTab({data,metrics,paymentDates,planFilter,setPlanFilter,onMarkPaid,
                 )}
               </div>
             </div>
-            {!paid&&<button onClick={()=>onMarkPaid(h)}
+            {!paid&&!isInstHito&&<button onClick={()=>onMarkPaid(h)}
               style={{marginTop:9,width:'100%',padding:'9px',background:isFirst?h.color:C.white,border:`1.5px solid ${h.color}`,borderRadius:8,color:isFirst?'#fff':h.color,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:C.font}}>
               {isFirst?'✓ Marcar como Pagado':'Marcar como Pagado'}
             </button>}
             {paid&&!seeded&&<button onClick={()=>onUnmark(h.id)} style={{marginTop:7,padding:'5px 11px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:7,color:C.sub,fontSize:11,cursor:'pointer',fontFamily:C.font,float:'right'}}>Deshacer</button>}
           </div>
         </div>;
-      })}
-    </div>
+      })}    </div>
   </div>;
 }
 
@@ -1208,6 +1319,10 @@ function NewPropModal({form,setForm,onSave,onClose}){
         <input type="number" value={form.ingreso||''} onChange={e=>setForm(f=>({...f,ingreso:e.target.value}))} placeholder="0" style={iSt}/>
       </Field>
     </div>
+    <Field label="🌱 Inicio del sueño (AAAA-MM)" sub="Cuándo decidiste perseguir esta propiedad — determina el orden de aparición">
+      <input type="text" value={form.dreamDate||''} onChange={e=>setForm(f=>({...f,dreamDate:e.target.value}))}
+        placeholder="2026-01" style={iSt}/>
+    </Field>
     <Field label="Comentario (opcional)">
       <input type="text" value={form.comentario||''} onChange={e=>setForm(f=>({...f,comentario:e.target.value}))} placeholder="Notas sobre esta propiedad" style={iSt}/>
     </Field>
@@ -1261,7 +1376,7 @@ function SavingModal({form,setForm,data,onSave,onClose,isEdit}){
     <MH title={isEdit?'Editar Ahorro':'Registrar Ahorro'} onClose={onClose}/>
     <Field label="Título (opcional)"><input type="text" value={form.titulo||''} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="Ej: Sueldo, Prima, Bono..." style={iSt}/></Field>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <Field label="Año"><select value={form.year||''} onChange={e=>setForm(f=>({...f,year:e.target.value}))} style={iSt}><option value="">Año</option>{Array.from({length:16},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}</option>)}</select></Field>
+      <Field label="Año"><select value={form.year||''} onChange={e=>setForm(f=>({...f,year:e.target.value}))} style={iSt}><option value="">Año</option>{Array.from({length:20},(_,i)=>2020+i).map(y=><option key={y} value={y}>{y}</option>)}</select></Field>
       <Field label="Mes"><select value={form.month||''} onChange={e=>setForm(f=>({...f,month:e.target.value}))} style={iSt}><option value="">Mes</option>{MES.map((n,i)=><option key={i+1} value={i+1}>{n}</option>)}</select></Field>
     </div>
     <Field label="Moneda"><select value={form.moneda||'ARS'} onChange={e=>setForm(f=>({...f,moneda:e.target.value,trm:e.target.value==='COP'?String(data.trm_cop):String(data.trm_ars)}))} style={iSt}><option value="ARS">Pesos Argentinos (ARS)</option><option value="COP">Pesos Colombianos (COP)</option></select></Field>
@@ -1294,7 +1409,7 @@ function PaidModal({form,setForm,hito,onSave,onClose}){
 }
 function EditPropModal({propId,data,form,setForm,onSave,onClose}){
   const pb=getBaseProp(propId,data);if(!pb)return null;
-  const doReset=()=>setForm({name:pb.name,totalUSD:String(pb.totalUSD),ingreso:String(pb.ingreso),comentario:pb.comentario||''});
+  const doReset=()=>setForm({name:pb.name,totalUSD:String(pb.totalUSD),ingreso:String(pb.ingreso),comentario:pb.comentario||'',dreamDate:pb.dreamDate||''});
   return<Overlay onClose={onClose}>
     <MH title={`Editar — ${pb.name}`} onClose={onClose}/>
     <Field label="Nombre"><input type="text" value={form.name||''} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder={pb.name} style={iSt}/></Field>
@@ -1303,6 +1418,10 @@ function EditPropModal({propId,data,form,setForm,onSave,onClose}){
       <Field label="Ingreso mensual (USD)"><input type="number" value={form.ingreso||''} onChange={e=>setForm(f=>({...f,ingreso:e.target.value}))} placeholder={String(pb.ingreso)} style={iSt}/></Field>
     </div>
     <Field label="Comentario"><input type="text" value={form.comentario||''} onChange={e=>setForm(f=>({...f,comentario:e.target.value}))} placeholder={pb.comentario||''} style={iSt}/></Field>
+    <Field label="🌱 Inicio del sueño (AAAA-MM)" sub="Fecha en que decidiste perseguir esta propiedad. Ordena las props en pantalla.">
+      <input type="text" value={form.dreamDate||''} onChange={e=>setForm(f=>({...f,dreamDate:e.target.value}))}
+        placeholder={pb.dreamDate||'2025-01'} style={iSt}/>
+    </Field>
     <div style={{display:'flex',gap:10}}>
       <Btn onClick={doReset} secondary color={C.sub} fullWidth small>↩ Restablecer</Btn>
       <Btn onClick={onSave} color={C.primary} fullWidth>Guardar</Btn>
@@ -1491,10 +1610,17 @@ function InstallmentManageModal({plan,onAction,onClose}){
         </div>
         <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {[...(plan.paidMonths||[])].sort().map(ym=>(
-            <span key={ym} style={{fontSize:11,fontWeight:600,color:C.success,background:C.successL,
-              padding:'3px 8px',borderRadius:12,fontFamily:C.font}}>{ym}</span>
+            <div key={ym} style={{display:'flex',alignItems:'center',gap:3}}>
+              <span style={{fontSize:11,fontWeight:600,color:C.success,background:C.successL,
+                padding:'3px 8px',borderRadius:12,fontFamily:C.font}}>{ym}</span>
+              <button onClick={()=>onAction('unconfirm',ym)}
+                style={{background:C.warningL,border:`1px solid ${C.warning}44`,borderRadius:8,
+                padding:'2px 5px',cursor:'pointer',fontSize:10,color:C.warning,fontFamily:C.font,
+                lineHeight:1}}>↩</button>
+            </div>
           ))}
         </div>
+        <div style={{fontSize:10,color:C.muted,fontFamily:C.font,marginTop:4}}>↩ para revertir una cuota confirmada por error</div>
       </div>
     )}
 
@@ -1536,10 +1662,341 @@ function ConfirmModal({msg,onConfirm,onCancel}){
   </div>;
 }
 
+
+// ─── TAB HISTORIAL ───────────────────────────────
+function HistorialTab({data,metrics}){
+  const{pIds,nY,nM}=metrics;
+  const allH=getAllHitos(data);
+  const allProps=getAllProps(data);
+  const propMap=Object.fromEntries(allProps.map(p=>[p.id,p]));
+
+  // Build timeline events
+  const events=[];
+  // 1. Savings
+  data.savings.forEach(s=>{
+    events.push({type:'saving',date:`${s.year}-${String(s.month).padStart(2,'0')}`,
+      year:s.year,month:s.month,amount:s.usd,local:s.local,moneda:s.moneda,
+      titulo:s.titulo||'Ahorro mensual',color:C.success,icon:'💰'});
+  });
+  // 2. Paid hitos
+  allH.forEach(h=>{
+    const p=data.paid[h.id];
+    if(!p)return;
+    const d=p.date?pDate(p.date):pDate(h.date);
+    if(!d)return;
+    events.push({type:'payment',date:`${d.y}-${String(d.m).padStart(2,'0')}`,
+      year:d.y,month:d.m,amount:p.amount_usd||h.usd,
+      label:h.label,propName:h.propName,color:h.color,seeded:p.seeded,icon:'✅'});
+  });
+  // 3. Installment confirmed months
+  (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').forEach(plan=>{
+    (plan.paidMonths||[]).forEach(ym=>{
+      const d=pDate(ym);if(!d)return;
+      events.push({type:'cuota',date:ym,year:d.y,month:d.m,
+        amount:plan.amountPerMonth,label:`Cuota ${plan.label}`,
+        propName:plan.propName,color:C.primary,icon:'📅'});
+    });
+  });
+  // 4. Dream starts (prop creation)
+  allProps.forEach(p=>{
+    if(!p.dreamDate)return;
+    const d=pDate(p.dreamDate);if(!d)return;
+    events.push({type:'dream',date:p.dreamDate,year:d.y,month:d.m,
+      label:`Inicio del sueño: ${p.name}`,propName:p.name,
+      color:p.color,icon:'🌱',amount:0});
+  });
+
+  const sorted=[...events].sort((a,b)=>a.date.localeCompare(b.date));
+  
+  // Group by year-month
+  const groups={};
+  sorted.forEach(e=>{
+    const k=`${e.year}-${String(e.month).padStart(2,'0')}`;
+    if(!groups[k])groups[k]=[];
+    groups[k].push(e);
+  });
+  const groupKeys=Object.keys(groups).sort();
+
+  // Monthly totals
+  const monthSavings={};
+  data.savings.forEach(s=>{
+    const k=`${s.year}-${String(s.month).padStart(2,'0')}`;
+    monthSavings[k]=(monthSavings[k]||0)+s.usd;
+  });
+
+  return<div className="fade-in">
+    <PageHeader title="Mi Historial" sub={`${sorted.filter(e=>e.type!=='dream').length} eventos registrados`}/>
+    {groupKeys.length===0?(
+      <div style={{textAlign:'center',padding:'60px 20px'}}>
+        <div style={{fontSize:40,marginBottom:12}}>📖</div>
+        <div style={{fontSize:15,fontWeight:700,color:C.text,fontFamily:C.head}}>Historial vacío</div>
+        <div style={{fontSize:13,color:C.sub,marginTop:6}}>Registrá ahorros y pagos para ver tu historia aquí</div>
+      </div>
+    ):(
+      <div style={{padding:'12px 12px 8px'}}>
+        {groupKeys.map(k=>{
+          const[y,m]=k.split('-').map(Number);
+          const evs=groups[k];
+          const isNow=y===nY&&m===nM;
+          const totalIn=evs.filter(e=>e.type==='saving').reduce((s,e)=>s+e.amount,0);
+          const totalOut=evs.filter(e=>e.type==='payment'&&!e.seeded).reduce((s,e)=>s+e.amount,0);
+          const totalCuotas=evs.filter(e=>e.type==='cuota').reduce((s,e)=>s+e.amount,0);
+          return<div key={k} style={{marginBottom:16}}>
+            {/* Month header */}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+              marginBottom:8,paddingBottom:6,borderBottom:`2px solid ${isNow?C.primary:C.border}`}}>
+              <div style={{fontSize:14,fontWeight:700,color:isNow?C.primary:C.text,fontFamily:C.head,display:'flex',gap:6,alignItems:'center'}}>
+                {isNow&&<span style={{fontSize:10,background:C.primary,color:'#fff',padding:'2px 6px',borderRadius:10,fontFamily:C.font}}>HOY</span>}
+                {MES_FULL[m-1]} {y}
+              </div>
+              {(totalIn>0||totalOut>0||totalCuotas>0)&&(
+                <div style={{fontSize:11,fontFamily:C.font,display:'flex',gap:8}}>
+                  {totalIn>0&&<span style={{color:C.success,fontWeight:700}}>+{fUSD(totalIn)}</span>}
+                  {totalOut>0&&<span style={{color:C.danger,fontWeight:700}}>-{fUSD(totalOut)}</span>}
+                  {totalCuotas>0&&<span style={{color:C.primary,fontWeight:700}}>~{fUSD(totalCuotas)}</span>}
+                </div>
+              )}
+            </div>
+            {/* Events */}
+            {evs.map((e,i)=>(
+              <div key={i} style={{display:'flex',gap:10,marginBottom:8,
+                background:C.white,borderRadius:10,padding:'9px 11px',
+                border:`1px solid ${C.border}`,
+                borderLeft:`3px solid ${e.color}`}}>
+                <span style={{fontSize:18,flexShrink:0,lineHeight:1.3}}>{e.icon}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font}}>
+                    {e.titulo||e.label}
+                    {e.seeded&&<span style={{fontSize:10,color:C.muted,marginLeft:6,fontWeight:400}}>histórico</span>}
+                  </div>
+                  {e.propName&&<div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:1}}>{e.propName}</div>}
+                  {e.type==='saving'&&e.local>0&&<div style={{fontSize:11,color:C.muted,fontFamily:C.font}}>
+                    {fLoc(e.local)} {e.moneda}
+                  </div>}
+                </div>
+                {e.amount>0&&<div style={{fontSize:14,fontWeight:700,color:e.type==='payment'?C.danger:e.type==='cuota'?C.primary:C.success,fontFamily:C.head,flexShrink:0}}>
+                  {e.type==='saving'?'+':e.type==='dream'?'':'-'}{e.type!=='dream'?fUSD(e.amount):''}
+                </div>}
+              </div>
+            ))}
+          </div>;
+        })}
+      </div>
+    )}
+    <div style={{height:8}}/>
+  </div>;
+}
+
+
+// ─── TAB ESCENARIOS ──────────────────────────────
+function EscenariosTab({data,metrics}){
+  const{realBalance,nY,nM,comp,savingsPending}=metrics;
+  const[extraMonthly,setExtraMonthly]=useState('0');
+  const[extraMonths,setExtraMonths]=useState('3');
+  const[oneTime,setOneTime]=useState('0');
+
+  const extra=parseFloat(extraMonthly)||0;
+  const nExtra=parseInt(extraMonths)||0;
+  const extra1=parseFloat(oneTime)||0;
+
+  // Scenario projection: same as computePaymentDates but with extra savings
+  const scenarioDates=useMemo(()=>{
+    const ordPending=getOrderedPending(data);
+    const installmentHitoIds=new Set(
+      (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
+    );
+    const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
+    const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-curMonthSaved);
+    let bal=realBalance+curMonthRem+extra1;
+    let cy=nY,cm=nM;
+    const result={};
+    const queue=ordPending.filter(h=>!h.rental&&!installmentHitoIds.has(h.id));
+    let it=0;
+    while(queue.length>0&&it++<1000){
+      const r=addM(cy,cm,1);cy=r.y;cm=r.m;
+      const moN=mDiff(nY,nM,cy,cm);
+      const bonusThis=moN<=nExtra?extra:0;
+      bal+=mSavEffective(cy,cm,data)+bonusThis;
+      while(queue.length>0&&bal>=queue[0].usd){const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};}
+    }
+    return result;
+  },[data,realBalance,nY,nM,extra,nExtra,extra1]);
+
+  // Base dates (no extra)
+  const baseDates=useMemo(()=>{
+    const ordPending=getOrderedPending(data);
+    const installmentHitoIds=new Set(
+      (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
+    );
+    const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
+    const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-curMonthSaved);
+    let bal=realBalance+curMonthRem;
+    let cy=nY,cm=nM;
+    const result={};
+    const queue=ordPending.filter(h=>!h.rental&&!installmentHitoIds.has(h.id));
+    let it=0;
+    while(queue.length>0&&it++<1000){
+      const r=addM(cy,cm,1);cy=r.y;cm=r.m;
+      bal+=mSavEffective(cy,cm,data);
+      while(queue.length>0&&bal>=queue[0].usd){const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};}
+    }
+    return result;
+  },[data,realBalance,nY,nM]);
+
+  const pendHitos=useMemo(()=>{
+    const instIds=new Set((data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId));
+    return getOrderedPending(data).filter(h=>!h.rental&&!instIds.has(h.id));
+  },[data]);
+
+  const hasScenario=extra>0||extra1>0;
+
+  // Scenario completion
+  const scenComp=useMemo(()=>{
+    if(pendHitos.length===0)return null;
+    const last=pendHitos[pendHitos.length-1];
+    return scenarioDates[last.id]||null;
+  },[pendHitos,scenarioDates]);
+  const baseComp=useMemo(()=>{
+    if(pendHitos.length===0)return null;
+    const last=pendHitos[pendHitos.length-1];
+    return baseDates[last.id]||null;
+  },[pendHitos,baseDates]);
+
+  const saving=baseComp&&scenComp?mDiff(scenComp.y,scenComp.m,baseComp.y,baseComp.m):0;
+
+  return<div className="fade-in">
+    <PageHeader title="Escenarios" sub="¿Qué pasa si ahorro más?"/>
+    <Card style={{marginTop:12}}>
+      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:12,fontFamily:C.font}}>
+        Simular ahorro adicional
+      </div>
+      <Field label="Ahorro extra por mes (USD)" sub="Adicional a tu capacidad actual">
+        <input type="number" value={extraMonthly} onChange={e=>setExtraMonthly(e.target.value)} placeholder="0" style={iSt}/>
+      </Field>
+      <Field label="Por cuántos meses" sub="Ej: 3 meses de bonos, 6 meses de ahorro extra...">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6,marginBottom:6}}>
+          {[3,6,12,24,'∞'].map(v=>(
+            <button key={v} onClick={()=>setExtraMonths(v==='∞'?'999':String(v))}
+              style={{padding:'8px 4px',borderRadius:8,border:`1.5px solid ${(v==='∞'?nExtra>=999:nExtra===v)?C.primary:C.border}`,
+              background:(v==='∞'?nExtra>=999:nExtra===v)?C.primaryL:C.white,
+              color:(v==='∞'?nExtra>=999:nExtra===v)?C.primary:C.sub,
+              fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:C.font}}>
+              {v}{v!=='∞'&&'m'}
+            </button>
+          ))}
+        </div>
+        <input type="number" value={extraMonths} onChange={e=>setExtraMonths(e.target.value)} placeholder="3" style={{...iSt,fontSize:13}}/>
+      </Field>
+      <Field label="Pago único ahora (USD)" sub="Ej: venta de un activo, herencia, bono especial">
+        <input type="number" value={oneTime} onChange={e=>setOneTime(e.target.value)} placeholder="0" style={iSt}/>
+      </Field>
+      {hasScenario&&saving>0&&(
+        <div style={{background:C.successL,borderRadius:10,padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center',border:`1.5px solid ${C.success}33`}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.success,fontFamily:C.font}}>✅ Te ahorrás {saving} meses</div>
+            <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:2}}>
+              Base: {baseComp?mStr(baseComp.y,baseComp.m):'—'} → Escenario: {scenComp?mStr(scenComp.y,scenComp.m):'—'}
+            </div>
+          </div>
+          <div style={{fontSize:24,fontWeight:700,color:C.success,fontFamily:C.head}}>{saving}m</div>
+        </div>
+      )}
+      {hasScenario&&saving===0&&(
+        <div style={{background:C.border2,borderRadius:10,padding:'12px',fontSize:13,color:C.sub,fontFamily:C.font}}>
+          Con este escenario la fecha de finalización no cambia significativamente.
+        </div>
+      )}
+    </Card>
+
+    {pendHitos.length>0&&(
+      <Card>
+        <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
+          Impacto en cada hito {hasScenario?'· Escenario vs Base':'· Fechas proyectadas base'}
+        </div>
+        {pendHitos.slice(0,12).map(h=>{
+          const base=baseDates[h.id],scen=scenarioDates[h.id];
+          const diff=base&&scen?mDiff(scen.y,scen.m,base.y,base.m):0;
+          return<div key={h.id} style={{padding:'9px 0',borderBottom:`1px solid ${C.border2}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div style={{flex:1}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                <div style={{width:7,height:7,borderRadius:3.5,background:h.color,flexShrink:0}}/>
+                <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font}}>{h.label}</div>
+              <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:1}}>
+                Base: {base?mStr(base.y,base.m):'—'}
+                {hasScenario&&scen&&<span style={{marginLeft:8,color:diff>0?C.success:C.sub,fontWeight:diff>0?700:400}}>
+                  → {mStr(scen.y,scen.m)}{diff>0?<span style={{color:C.success}}> ({diff}m antes)</span>:null}
+                </span>}
+              </div>
+            </div>
+            <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.head,flexShrink:0}}>{fUSD(h.usd)}</div>
+          </div>;
+        })}
+        {pendHitos.length>12&&<div style={{fontSize:11,color:C.muted,fontFamily:C.font,textAlign:'center',paddingTop:6}}>
+          +{pendHitos.length-12} hitos más
+        </div>}
+      </Card>
+    )}
+    {/* Proyección dentro de Escenarios */}
+    <Card>
+      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
+        📈 Curva de ahorro acumulado
+      </div>
+      <ProyeccionMini data={data} metrics={metrics}/>
+    </Card>
+    <div style={{height:8}}/>
+  </div>;
+}
+
+
+// ─── PROYECCIÓN MINI (for Escenarios tab) ────────
+function ProyeccionMini({data,metrics}){
+  const{realTotal,thTotal,savGap,comp,nY,nM,pIds}=metrics;
+  const chartPts=useMemo(()=>{
+    const pts=[];let tC=0,rC=0;
+    for(let y=2026;y<=2042;y++){for(let m=(y===2026?4:1);m<=12;m++){
+      tC+=mSav(y,m);const e=data.savings.find(s=>s.year===y&&s.month===m);if(e)rC+=e.usd;
+      const isReal=(y<nY||(y===nY&&m<=nM));pts.push({y,m,tC,rC:isReal?rC:null});
+    }}return pts;
+  },[data,nY,nM]);
+  const maxV=Math.max(...chartPts.map(p=>p.tC),1);
+  const W=700,H=130,ML=32,MB=18,MT=6,MR=6,PW=W-ML-MR,PH=H-MB-MT;
+  const xOf=(y,m)=>ML+((y-2026)*12+(m-4))*(PW/((2042-2026)*12+9));
+  const yOf=v=>MT+PH-(v/maxV)*PH;
+  const tPath=chartPts.map((p,i)=>`${i===0?'M':'L'}${xOf(p.y,p.m).toFixed(1)},${yOf(p.tC).toFixed(1)}`).join(' ');
+  const rPts=chartPts.filter(p=>p.rC!=null);
+  const rPath=rPts.map((p,i)=>`${i===0?'M':'L'}${xOf(p.y,p.m).toFixed(1)},${yOf(p.rC).toFixed(1)}`).join(' ');
+  const compDelay=comp?mDiff(2039,6,comp.y,comp.m):0;
+  return<>
+    <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch',margin:'0 -2px'}}>
+      <svg width={W} height={H+4} style={{display:'block'}}>
+        {[0,.5,1].map(f=>{const v=maxV*f,y2=yOf(v);return<g key={f}>
+          <line x1={ML} y1={y2} x2={W-MR} y2={y2} stroke={C.border} strokeWidth={1}/>
+          <text x={ML-3} y={y2+4} fill={C.sub} fontSize={7} textAnchor="end" fontFamily="Inter">{v>=1000?`${Math.round(v/1000)}K`:'0'}</text>
+        </g>;})}
+        {[2026,2030,2035,2040,2042].map(yr=><g key={yr}>
+          <line x1={xOf(yr,4)} y1={MT} x2={xOf(yr,4)} y2={MT+PH} stroke={C.border2} strokeWidth={1}/>
+          <text x={xOf(yr,4)} y={H} fill={C.sub} fontSize={8} textAnchor="middle" fontFamily="Inter">{yr}</text>
+        </g>)}
+        <path d={tPath} fill="none" stroke={C.muted} strokeWidth={1.5} strokeDasharray="5,3"/>
+        {rPath&&<path d={rPath} fill="none" stroke={C.success} strokeWidth={2.5}/>}
+        {rPts.map(p=><circle key={`${p.y}-${p.m}`} cx={xOf(p.y,p.m)} cy={yOf(p.rC)} r={2.5} fill={C.success} stroke={C.white} strokeWidth={1}/>)}
+      </svg>
+    </div>
+    <div style={{marginTop:6,display:'flex',justifyContent:'space-between',fontSize:11,fontFamily:C.font}}>
+      <span style={{color:C.sub}}>Real: {fUSD(realTotal)}</span>
+      <span style={{color:savGap>=0?C.success:C.danger}}>{savGap>=0?'+':''}{fUSD(savGap)} vs teórico</span>
+      {comp&&<span style={{color:compDelay>0?C.warning:C.success,fontWeight:700}}>Fin: {mStr(comp.y,comp.m)}</span>}
+    </div>
+  </>;
+}
+
 // ─── NAV ─────────────────────────────────────────
 function BottomNav({tab,setTab}){
   const tabs=[{id:'inicio',icon:'🏠',l:'Inicio'},{id:'ahorros',icon:'💰',l:'Ahorros'},
-    {id:'propiedades',icon:'🏢',l:'Props'},{id:'plan',icon:'📋',l:'Plan'},{id:'proyeccion',icon:'📈',l:'Proyec.'}];
+    {id:'propiedades',icon:'🏢',l:'Props'},{id:'plan',icon:'📋',l:'Plan'},
+    {id:'historial',icon:'📖',l:'Hist.'},{id:'escenarios',icon:'🔭',l:'Esce.'}];
   return<div style={{position:'fixed',bottom:0,left:0,right:0,maxWidth:480,margin:'0 auto',
     background:C.white,borderTop:`1px solid ${C.border}`,display:'flex',zIndex:100,
     paddingBottom:'env(safe-area-inset-bottom)',boxShadow:'0 -2px 12px rgba(0,0,0,.07)'}}>
@@ -1547,9 +2004,9 @@ function BottomNav({tab,setTab}){
       <button key={t.id} onClick={()=>setTab(t.id)}
         style={{flex:1,padding:'11px 0 9px',border:'none',background:'none',cursor:'pointer',
         display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-        color:tab===t.id?C.primary:C.muted,fontFamily:C.font,minHeight:62}}>
-        <span style={{fontSize:26,lineHeight:1}}>{t.icon}</span>
-        <span style={{fontSize:10,fontWeight:tab===t.id?700:400,lineHeight:1.2}}>{t.l}</span>
+        color:tab===t.id?C.primary:C.muted,fontFamily:C.font,minHeight:58}}>
+        <span style={{fontSize:22,lineHeight:1}}>{t.icon}</span>
+        <span style={{fontSize:9,fontWeight:tab===t.id?700:400,lineHeight:1.2}}>{t.l}</span>
         {tab===t.id&&<div style={{width:5,height:3,borderRadius:2,background:C.primary}}/>}
       </button>
     ))}
@@ -1614,14 +2071,14 @@ function App(){
   const openEditProp=useCallback(propId=>{
     const pb=getBaseProp(propId,data);if(!pb)return;
     const ov=data.propOverrides?.[propId]||{};
-    setPropForm({name:ov.name??pb.name,totalUSD:String(ov.totalUSD??pb.totalUSD),ingreso:String(ov.ingreso??pb.ingreso),comentario:ov.comentario??pb.comentario??''});
+    setPropForm({name:ov.name??pb.name,totalUSD:String(ov.totalUSD??pb.totalUSD),ingreso:String(ov.ingreso??pb.ingreso),comentario:ov.comentario??pb.comentario??'',dreamDate:ov.dreamDate??pb.dreamDate??''});
     setEditingPropId(propId);setModal('editProp');
   },[data]);
   const savePropEdit=useCallback(()=>{
     if(!editingPropId)return;
     setData(d=>({...d,propOverrides:{...d.propOverrides,[editingPropId]:{...(d.propOverrides?.[editingPropId]||{}),
       name:propForm.name||undefined,totalUSD:propForm.totalUSD!==''?parseFloat(propForm.totalUSD):undefined,
-      ingreso:propForm.ingreso!==''?parseFloat(propForm.ingreso):undefined,comentario:propForm.comentario!==undefined?propForm.comentario:undefined}}}));
+      ingreso:propForm.ingreso!==''?parseFloat(propForm.ingreso):undefined,comentario:propForm.comentario!==undefined?propForm.comentario:undefined,dreamDate:propForm.dreamDate||undefined}}}));
     setModal(null);
   },[editingPropId,propForm]);
 
@@ -1667,7 +2124,8 @@ function App(){
     const builtHitos=hitos.map((h,i)=>({id:`${propId}_h${i}`,label:h.label,usd:parseFloat(h.usd),date:h.date}));
     const newProp={id:propId,name,moneda,trm:moneda==='ARS'?1500:moneda==='COP'?3700:1,
       totalUSD:parseFloat(totalUSD),ingreso:parseFloat(ingreso)||0,
-      comentario,color,colorL,defStatus:'Sin Iniciar',hitos:builtHitos};
+      comentario,color,colorL,dreamDate:newPropForm.dreamDate||builtHitos[0]?.date||'2026-01',
+      defStatus:'Sin Iniciar',hitos:builtHitos};
     setData(d=>{
       const updated={...d,customProps:[...(d.customProps||[]),newProp],propStatus:{...d.propStatus,[propId]:'Sin Iniciar'}};
       // Get ALL pending hitos after adding the new prop, then merge preserving manual order
@@ -1742,6 +2200,14 @@ function App(){
         }
         return{...d,installmentPlans:updated};
       });
+    } else if(action==='unconfirm'){
+      // ef = ym string like '2026-04' to remove from paidMonths
+      setData(d=>({...d,installmentPlans:d.installmentPlans.map(p=>{
+        if(p.id!==plan.id)return p;
+        const newPM=(p.paidMonths||[]).filter(m=>m!==ef);
+        const wasComplete=p.status==='completed';
+        return{...p,paidMonths:newPM,status:wasComplete?'active':p.status};
+      })}));
     } else if(action==='manage'){
       setInstManagePlan(plan);
       setModal('instManage');
@@ -1770,6 +2236,49 @@ function App(){
     }
   },[]);
 
+  const exportBackup=useCallback(()=>{
+    try{
+      const backup={...data,_version:2,_exportDate:new Date().toISOString(),_app:'retiro_inmobiliario'};
+      const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=`retiro_backup_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }catch(e){alert('Error al exportar: '+e.message);}
+  },[data]);
+
+  const importBackup=useCallback((e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      try{
+        const parsed=JSON.parse(ev.target.result);
+        if(parsed._app!=='retiro_inmobiliario')return alert('Archivo no válido — no es un backup de esta app');
+        delete parsed._version;delete parsed._exportDate;delete parsed._app;
+        setConfirmData({
+          msg:`¿Restaurar backup del ${file.name}? Se reemplazarán todos tus datos actuales.`,
+          onConfirm:()=>{setData({...DEF,...parsed});setConfirmData(null);}
+        });
+      }catch(err){alert('Error al leer el archivo: '+err.message);}
+    };
+    reader.readAsText(file);
+    e.target.value=''; // reset file input
+  },[]);
+
+  const resetAll=useCallback(()=>{
+    setConfirmData({
+      msg:'¿Reiniciar la app? Se borrarán ahorros registrados, pagos manuales, planes de cuotas y overrides de capacidad. Las propiedades e hitos base se conservan.',
+      onConfirm:()=>{
+        const fresh={...DEF};
+        SEEDED_IDS.forEach(id=>{fresh.paid[id]={seeded:true};});
+        PROPS_BASE.forEach(p=>{fresh.propStatus[p.id]=p.defStatus;});
+        setData(fresh);
+        setConfirmData(null);
+      }
+    });
+  },[]);
+
   const setMonthOverride=useCallback((key,value)=>{
     setData(d=>{
       const ov={...d.savingsOverrides};
@@ -1792,9 +2301,11 @@ function App(){
   const NAV_H='calc(74px + env(safe-area-inset-bottom))';
   return<div style={{maxWidth:480,margin:'0 auto',minHeight:'100svh',background:C.bg,fontFamily:C.font,color:C.text,paddingBottom:NAV_H,overflowX:'hidden'}}>
     {tab==='inicio'      &&<InicioTab metrics={metrics} onAddSaving={openAdd} onManual={()=>setModal('manual')} onManageInstallment={manageInstallment}/>}
-    {tab==='ahorros'     &&<AhorrosTab data={data} metrics={metrics} onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmData({msg:'¿Eliminar este registro de ahorro?',onConfirm:()=>{setData(d=>({...d,savings:d.savings.filter(s=>s.id!==id)}));setConfirmData(null);}})} onSetOverride={setMonthOverride}/>}
+    {tab==='ahorros'     &&<AhorrosTab data={data} metrics={metrics} onAdd={openAdd} onEdit={openEdit} onDelete={id=>setConfirmData({msg:'¿Eliminar este registro de ahorro?',onConfirm:()=>{setData(d=>({...d,savings:d.savings.filter(s=>s.id!==id)}));setConfirmData(null);}})} onSetOverride={setMonthOverride} onReset={resetAll} onExport={exportBackup} onImport={importBackup}/>}
     {tab==='propiedades' &&<PropiedadesTab data={data} onChangeStatus={changeStatus} onEditProp={openEditProp} onEditHito={openEditHito} onAddHito={openAddHito} onRemoveHito={removeHito} onDeleteProp={deleteCustomProp} onNewProp={openNewProp} onUnmark={unmarkPaid} onSetupInstallment={openSetupInstallment}/>}
     {tab==='plan'        &&<PlanTab data={data} metrics={metrics} paymentDates={paymentDates} planFilter={planFilter} setPlanFilter={setPlanFilter} onMarkPaid={openMarkPaid} onUnmark={unmarkPaid} onMoveHito={moveHito} onEditHitoFromPlan={openEditHitoFromPlan}/>}
+    {tab==='historial'   &&<HistorialTab data={data} metrics={metrics}/>}
+    {tab==='escenarios'  &&<EscenariosTab data={data} metrics={metrics}/>}
     {tab==='proyeccion'  &&<ProyeccionTab data={data} metrics={metrics}/>}
 
     {modal==='manual'   &&<ManualModal onClose={()=>setModal(null)}/>}
