@@ -168,6 +168,23 @@ function installmentDeductionForMonth(y,m,data){
 function mSavEffective(y,m,data){
   return Math.max(0, baseCapacity(y,m,data) - installmentDeductionForMonth(y,m,data));
 }
+// Count all months in a plan's range that have ALREADY PASSED (up to and including current month)
+// Used to correctly reduce starting balance for projections
+function instObligationsToDate(plan,nY,nM){
+  const parsed=pDate(plan.startDate);
+  if(!parsed)return 0;
+  const{y:sy,m:sm}=parsed;
+  const currentYM=`${nY}-${String(nM).padStart(2,'0')}`;
+  let count=0,cy=sy,cm=sm;
+  for(let i=0;i<plan.totalMonths;i++){
+    const ym=`${cy}-${String(cm).padStart(2,'0')}`;
+    if(ym>currentYM)break;
+    count++;
+    const r=addM(cy,cm,1);cy=r.y;cm=r.m;
+  }
+  return count*plan.amountPerMonth;
+}
+
 // Get installment plan for a hito id
 function getPlanForHito(hitoId,data){
   return(data.installmentPlans||[]).find(p=>p.hitoId===hitoId&&p.status!=='cancelled');
@@ -278,9 +295,9 @@ function computePaymentDates(data){
   const ordPending=getOrderedPending(data);
   const rt=data.savings.reduce((s,e)=>s+e.usd,0);
   const np=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
-  // Confirmed installment cuotas reduce balance (same as computeMetrics)
-  const ipf=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled')
-    .reduce((s,p)=>s+paidMonthsCount(p)*p.amountPerMonth,0);
+  // All past installment obligations (consistent with computeMetrics)
+  const ipf=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled'&&p.status!=='paused')
+    .reduce((s,p)=>s+instObligationsToDate(p,nY,nM),0);
   const monthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
   const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-monthSaved);
   let bal=rt-np-ipf+curMonthRem;
@@ -354,15 +371,15 @@ function computeMetrics(data){
   const nextHito=savingsPending[0]||null;
   const realTotal=data.savings.reduce((s,e)=>s+e.usd,0);
   const nonSeededPaid=Object.entries(data.paid).filter(([,v])=>!v.seeded&&v.amount_usd).reduce((s,[,v])=>s+(v.amount_usd||0),0);
-  // Confirmed installment cuotas are real money spent — deduct from balance
-  const instPaidSoFar=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled')
-    .reduce((s,p)=>s+paidMonthsCount(p)*p.amountPerMonth,0);
-  const realBalance=realTotal-nonSeededPaid-instPaidSoFar;
+  // All past installment obligations (plan start → today), confirmed or not.
+  // A plan for $1,600/mo starting April 2026 means $1,600 is obligated every month in range.
+  // This is deducted from balance regardless of confirmation — if not confirmed, balance goes negative.
+  const instOblig=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled'&&p.status!=='paused')
+    .reduce((s,p)=>s+instObligationsToDate(p,nY,nM),0);
+  const realBalance=realTotal-nonSeededPaid-instOblig;
   const thTotal=theorCumul(nY,nM,data);
-  // savGap: net available vs what net should be.
-  // If user paid $17K and plan only expected $4K by now → they're "al día" (spent > expected, balance ≥ 0)
-  // If user saved nothing and plan expected $4K → they're $4K behind
-  const thNet=Math.max(0, thTotal - nonSeededPaid - instPaidSoFar);
+  // savGap: net available vs theoretical net
+  const thNet=Math.max(0, thTotal - nonSeededPaid - instOblig);
   const savGap=realBalance - thNet;
   const monthTheo=baseCapacity(nY,nM,data);
   const monthInstDeduct=installmentDeductionForMonth(nY,nM,data);
@@ -371,10 +388,8 @@ function computeMetrics(data){
   const seededSum=allH.filter(h=>data.paid[h.id]?.seeded).reduce((s,h)=>s+h.usd,0);
   const allPropsM=getAllProps(data);
   const totalPortfolio=allPropsM.reduce((s,p)=>s+p.totalUSD,0);
-  // progressValue: historical paid + savings + installment amounts already committed
-  const instCommitted=(data.installmentPlans||[]).filter(p=>p.status!=='cancelled')
-    .reduce((s,p)=>s+paidMonthsCount(p)*p.amountPerMonth, 0);
-  const progressValue=seededSum+realTotal+instCommitted;
+  // progressValue: historical paid + savings + past installment obligations
+  const progressValue=seededSum+realTotal+instOblig;
 
   // Include current month's unregistered capacity in projection balance
   const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
@@ -1938,6 +1953,7 @@ function EscenariosTab({data,metrics}){
     );
     const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
     const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-curMonthSaved);
+    // realBalance already has instOblig deducted (via computeMetrics)
     let bal=realBalance+curMonthRem;
     let cy=nY,cm=nM;
     const result={};
