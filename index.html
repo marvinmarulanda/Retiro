@@ -326,7 +326,7 @@ function computePaymentDates(data){
 const DEF={trm_ars:1500,trm_cop:3700,savings:[],paid:{},propStatus:{},
            propOverrides:{},hitoOverrides:{},hitoOrder:[],
            hitoAdditions:{},hitoRemovals:[],customProps:[],
-           installmentPlans:[],savingsOverrides:{},deletedBaseProps:[]};
+           installmentPlans:[],savingsOverrides:{},deletedBaseProps:[],scenarioOrder:[]};
 function loadData(){
   try{
     const s=localStorage.getItem(KEY);
@@ -337,6 +337,7 @@ function loadData(){
     if(!d.installmentPlans)d.installmentPlans=[];
     if(!d.savingsOverrides)d.savingsOverrides={};
     if(!d.deletedBaseProps)d.deletedBaseProps=[];
+    if(!d.scenarioOrder)d.scenarioOrder=[];
     // Clean up orphaned installment plans (hito was deleted but plan survived)
     if(d.installmentPlans&&d.installmentPlans.length>0){
       const validHitoIds=new Set(getAllHitos(d).map(h=>h.id));
@@ -1792,6 +1793,49 @@ function ConfirmModal({msg,onConfirm,onCancel}){
 }
 
 
+
+// Compute theoretical projected dates for a custom hito ordering
+// Uses baseCapacity-installments (no real savings), starts from today
+function computeTheoreticalDates(orderedHitos, data){
+  const now=new Date(),nY=now.getFullYear(),nM=now.getMonth()+1;
+  const instHitoIds=new Set((data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId));
+  let bal=0; // start from zero (pure theoretical)
+  let cy=nY,cm=nM;
+  const result={};
+  const queue=orderedHitos.filter(h=>!h.rental&&!instHitoIds.has(h.id));
+  let it=0;
+  while(queue.length>0&&it++<1200){
+    const r=addM(cy,cm,1);cy=r.y;cm=r.m;
+    bal+=mSavEffective(cy,cm,data);
+    while(queue.length>0&&bal>=queue[0].usd){
+      const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};
+    }
+  }
+  return result;
+}
+
+// Compute real projected dates for a custom hito ordering
+// Uses actual realBalance as starting point
+function computeRealDatesForOrder(orderedHitos, data, realBalance){
+  const now=new Date(),nY=now.getFullYear(),nM=now.getMonth()+1;
+  const instHitoIds=new Set((data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId));
+  const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
+  const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-curMonthSaved);
+  let bal=realBalance+curMonthRem;
+  let cy=nY,cm=nM;
+  const result={};
+  const queue=orderedHitos.filter(h=>!h.rental&&!instHitoIds.has(h.id));
+  let it=0;
+  while(queue.length>0&&it++<1200){
+    const r=addM(cy,cm,1);cy=r.y;cm=r.m;
+    bal+=mSavEffective(cy,cm,data);
+    while(queue.length>0&&bal>=queue[0].usd){
+      const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};
+    }
+  }
+  return result;
+}
+
 // ─── TAB HISTORIAL ───────────────────────────────
 function HistorialTab({data,metrics}){
   const{pIds,nY,nM}=metrics;
@@ -1919,28 +1963,68 @@ function HistorialTab({data,metrics}){
 
 
 // ─── TAB ESCENARIOS ──────────────────────────────
-function EscenariosTab({data,metrics}){
-  const{realBalance,nY,nM,comp}=metrics;
+function EscenariosTab({data,metrics,onSaveScenarioOrder}){
+  const{realBalance,nY,nM}=metrics;
+  const[tab2,setTab2]=useState('planner'); // 'planner' | 'extra'
   const[extraMonthly,setExtraMonthly]=useState('0');
   const[extraMonths,setExtraMonths]=useState('3');
   const[oneTime,setOneTime]=useState('0');
 
+  // ── SCENARIO PLANNER ─────────────────────────────
+  // Get all pending non-rental non-installment hitos
+  const instHitoIds=useMemo(()=>new Set(
+    (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
+  ),[data.installmentPlans]);
+
+  const pIds=useMemo(()=>new Set(Object.keys(data.paid)),[data.paid]);
+
+  const pendingHitos=useMemo(()=>
+    getAllHitos(data).filter(h=>!pIds.has(h.id)&&!h.rental&&!instHitoIds.has(h.id))
+  ,[data,pIds,instHitoIds]);
+
+  // Scenario order — separate from Plan's order, stored in data.scenarioOrder
+  const scenarioOrder=useMemo(()=>{
+    const saved=data.scenarioOrder||[];
+    const savedSet=new Set(saved);
+    // Merge: keep saved order, append new hitos chronologically at end
+    const newHitos=pendingHitos.filter(h=>!savedSet.has(h.id))
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    const merged=[...saved.filter(id=>pendingHitos.some(h=>h.id===id)),...newHitos.map(h=>h.id)];
+    return merged;
+  },[data.scenarioOrder,pendingHitos]);
+
+  const orderedHitos=useMemo(()=>
+    scenarioOrder.map(id=>pendingHitos.find(h=>h.id===id)).filter(Boolean)
+  ,[scenarioOrder,pendingHitos]);
+
+  // Theoretical dates (from zero balance, pure capacity)
+  const theoDates=useMemo(()=>computeTheoreticalDates([...orderedHitos],data),[orderedHitos,data]);
+  // Real dates (from current real balance)
+  const realDates=useMemo(()=>computeRealDatesForOrder([...orderedHitos],data,realBalance),[orderedHitos,data,realBalance]);
+
+  const hasRealSavings=data.savings&&data.savings.length>0;
+
+  const moveItem=(id,dir)=>{
+    const idx=scenarioOrder.indexOf(id);
+    const newOrder=[...scenarioOrder];
+    if(dir==='up'&&idx>0){[newOrder[idx-1],newOrder[idx]]=[newOrder[idx],newOrder[idx-1]];}
+    if(dir==='down'&&idx<newOrder.length-1){[newOrder[idx],newOrder[idx+1]]=[newOrder[idx+1],newOrder[idx]];}
+    onSaveScenarioOrder(newOrder);
+  };
+
+  // ── EXTRA SAVINGS SCENARIO ────────────────────────
   const extra=parseFloat(extraMonthly)||0;
   const nExtra=parseInt(extraMonths)||0;
   const extra1=parseFloat(oneTime)||0;
 
-  // Scenario projection: same as computePaymentDates but with extra savings
   const scenarioDates=useMemo(()=>{
-    const ordPending=getOrderedPending(data);
-    const installmentHitoIds=new Set(
-      (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
-    );
+    const installmentHitoIds=new Set((data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId));
     const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
     const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-curMonthSaved);
     let bal=realBalance+curMonthRem+extra1;
     let cy=nY,cm=nM;
     const result={};
-    const queue=ordPending.filter(h=>!h.rental&&!installmentHitoIds.has(h.id));
+    const queue=orderedHitos.filter(h=>!h.rental&&!installmentHitoIds.has(h.id));
     let it=0;
     while(queue.length>0&&it++<1000){
       const r=addM(cy,cm,1);cy=r.y;cm=r.m;
@@ -1950,127 +2034,166 @@ function EscenariosTab({data,metrics}){
       while(queue.length>0&&bal>=queue[0].usd){const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};}
     }
     return result;
-  },[data,realBalance,nY,nM,extra,nExtra,extra1]);
-
-  // Base dates (no extra)
-  const baseDates=useMemo(()=>{
-    const ordPending=getOrderedPending(data);
-    const installmentHitoIds=new Set(
-      (data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId)
-    );
-    const curMonthSaved=data.savings.filter(s=>s.year===nY&&s.month===nM).reduce((s,e)=>s+e.usd,0);
-    const curMonthRem=Math.max(0,mSavEffective(nY,nM,data)-curMonthSaved);
-    // realBalance already has instOblig deducted (via computeMetrics)
-    let bal=realBalance+curMonthRem;
-    let cy=nY,cm=nM;
-    const result={};
-    const queue=ordPending.filter(h=>!h.rental&&!installmentHitoIds.has(h.id));
-    let it=0;
-    while(queue.length>0&&it++<1000){
-      const r=addM(cy,cm,1);cy=r.y;cm=r.m;
-      bal+=mSavEffective(cy,cm,data);
-      while(queue.length>0&&bal>=queue[0].usd){const h=queue.shift();bal-=h.usd;result[h.id]={y:cy,m:cm};}
-    }
-    return result;
-  },[data,realBalance,nY,nM]);
-
-  const pendHitos=useMemo(()=>{
-    const instIds=new Set((data.installmentPlans||[]).filter(p=>p.status!=='cancelled').map(p=>p.hitoId));
-    return getOrderedPending(data).filter(h=>!h.rental&&!instIds.has(h.id));
-  },[data]);
+  },[data,realBalance,nY,nM,extra,nExtra,extra1,orderedHitos]);
 
   const hasScenario=extra>0||extra1>0;
+  const lastHito=orderedHitos[orderedHitos.length-1];
+  const baseComp=lastHito?realDates[lastHito.id]:null;
+  const scenComp=lastHito?scenarioDates[lastHito.id]:null;
+  const saving=baseComp&&scenComp?Math.max(0,mDiff(scenComp.y,scenComp.m,baseComp.y,baseComp.m)):0;
 
-  // Scenario completion
-  const scenComp=useMemo(()=>{
-    if(pendHitos.length===0)return null;
-    const last=pendHitos[pendHitos.length-1];
-    return scenarioDates[last.id]||null;
-  },[pendHitos,scenarioDates]);
-  const baseComp=useMemo(()=>{
-    if(pendHitos.length===0)return null;
-    const last=pendHitos[pendHitos.length-1];
-    return baseDates[last.id]||null;
-  },[pendHitos,baseDates]);
-
-  const saving=baseComp&&scenComp?mDiff(scenComp.y,scenComp.m,baseComp.y,baseComp.m):0;
-
-  if(!metrics||!data)return null;
   return<div className="fade-in">
-    <PageHeader title="Escenarios" sub="¿Qué pasa si ahorro más?"/>
-    <Card style={{marginTop:12}}>
-      <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:12,fontFamily:C.font}}>
-        Simular ahorro adicional
-      </div>
-      <Field label="Ahorro extra por mes (USD)" sub="Adicional a tu capacidad actual">
-        <input type="number" value={extraMonthly} onChange={e=>setExtraMonthly(e.target.value)} placeholder="0" style={iSt}/>
-      </Field>
-      <Field label="Por cuántos meses" sub="Ej: 3 meses de bonos, 6 meses de ahorro extra...">
-        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6,marginBottom:6}}>
-          {[3,6,12,24,'∞'].map(v=>(
-            <button key={v} onClick={()=>setExtraMonths(v==='∞'?'999':String(v))}
-              style={{padding:'8px 4px',borderRadius:8,border:`1.5px solid ${(v==='∞'?nExtra>=999:nExtra===v)?C.primary:C.border}`,
-              background:(v==='∞'?nExtra>=999:nExtra===v)?C.primaryL:C.white,
-              color:(v==='∞'?nExtra>=999:nExtra===v)?C.primary:C.sub,
-              fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:C.font}}>
-              {v}{v!=='∞'&&'m'}
-            </button>
-          ))}
-        </div>
-        <input type="number" value={extraMonths} onChange={e=>setExtraMonths(e.target.value)} placeholder="3" style={{...iSt,fontSize:13}}/>
-      </Field>
-      <Field label="Pago único ahora (USD)" sub="Ej: venta de un activo, herencia, bono especial">
-        <input type="number" value={oneTime} onChange={e=>setOneTime(e.target.value)} placeholder="0" style={iSt}/>
-      </Field>
-      {hasScenario&&saving>0&&(
-        <div style={{background:C.successL,borderRadius:10,padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center',border:`1.5px solid ${C.success}33`}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:C.success,fontFamily:C.font}}>✅ Te ahorrás {saving} meses</div>
-            <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:2}}>
-              Base: {baseComp?mStr(baseComp.y,baseComp.m):'—'} → Escenario: {scenComp?mStr(scenComp.y,scenComp.m):'—'}
-            </div>
-          </div>
-          <div style={{fontSize:24,fontWeight:700,color:C.success,fontFamily:C.head}}>{saving}m</div>
-        </div>
-      )}
-      {hasScenario&&saving===0&&(
-        <div style={{background:C.border2,borderRadius:10,padding:'12px',fontSize:13,color:C.sub,fontFamily:C.font}}>
-          Con este escenario la fecha de finalización no cambia significativamente.
-        </div>
-      )}
-    </Card>
+    <PageHeader title="Escenarios" sub="Planificador y simulador"/>
 
-    {pendHitos.length>0&&(
-      <Card>
-        <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
-          Impacto en cada hito {hasScenario?'· Escenario vs Base':'· Fechas proyectadas base'}
+    {/* Sub-tabs */}
+    <div style={{display:'flex',padding:'8px 12px 0',gap:8}}>
+      {[{k:'planner',l:'📋 Planificador'},{k:'extra',l:'💡 ¿Qué pasa si...?'}].map(t=>(
+        <button key={t.k} onClick={()=>setTab2(t.k)}
+          style={{flex:1,padding:'9px',borderRadius:10,fontFamily:C.font,fontSize:13,fontWeight:700,
+          cursor:'pointer',border:`1.5px solid ${tab2===t.k?C.primary:C.border}`,
+          background:tab2===t.k?C.primaryL:C.white,color:tab2===t.k?C.primary:C.sub}}>
+          {t.l}
+        </button>
+      ))}
+    </div>
+
+    {/* ── PLANNER TAB ── */}
+    {tab2==='planner'&&<div>
+      <Card style={{marginTop:10}}>
+        <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:4,fontFamily:C.font}}>
+          Planificador de hitos
         </div>
-        {pendHitos.slice(0,12).map(h=>{
-          const base=baseDates[h.id],scen=scenarioDates[h.id];
-          const diff=base&&scen?mDiff(scen.y,scen.m,base.y,base.m):0;
-          return<div key={h.id} style={{padding:'9px 0',borderBottom:`1px solid ${C.border2}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div style={{flex:1}}>
-              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-                <div style={{width:7,height:7,borderRadius:3.5,background:h.color,flexShrink:0}}/>
-                <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
+        <div style={{fontSize:12,color:C.sub,fontFamily:C.font,marginBottom:12,lineHeight:1.5}}>
+          Ordená los hitos con ↑↓. La columna <span style={{color:C.primary,fontWeight:700}}>Teórico</span> muestra cuándo llegarías ahorrando según el plan mensual (desde cero). {hasRealSavings&&<span>La columna <span style={{color:realBalance>=0?C.success:C.danger,fontWeight:700}}>Real</span> ajusta con tu ahorro actual y el delay.</span>}
+        </div>
+
+        {orderedHitos.length===0?(
+          <div style={{textAlign:'center',padding:'24px 0',color:C.muted,fontFamily:C.font,fontSize:13}}>
+            No hay hitos pendientes sin cuotas activas
+          </div>
+        ):(
+          orderedHitos.map((h,idx)=>{
+            const theo=theoDates[h.id];
+            const real=realDates[h.id];
+            const delay=theo&&real?mDiff(theo.y,theo.m,real.y,real.m):0;
+            return<div key={h.id} style={{borderTop:`1px solid ${C.border2}`,paddingTop:9,marginBottom:9}}>
+              <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                {/* Reorder buttons */}
+                <div style={{display:'flex',flexDirection:'column',gap:3,flexShrink:0,paddingTop:2}}>
+                  <button onClick={()=>moveItem(h.id,'up')} disabled={idx===0}
+                    style={{background:idx===0?C.border2:C.primaryL,border:`1px solid ${idx===0?C.border:C.primary}`,
+                    borderRadius:5,width:24,height:24,cursor:idx===0?'default':'pointer',
+                    color:idx===0?C.muted:C.primary,fontSize:12,lineHeight:1,opacity:idx===0?.4:1}}>↑</button>
+                  <button onClick={()=>moveItem(h.id,'down')} disabled={idx===orderedHitos.length-1}
+                    style={{background:idx===orderedHitos.length-1?C.border2:C.primaryL,border:`1px solid ${idx===orderedHitos.length-1?C.border:C.primary}`,
+                    borderRadius:5,width:24,height:24,cursor:idx===orderedHitos.length-1?'default':'pointer',
+                    color:idx===orderedHitos.length-1?C.muted:C.primary,fontSize:12,lineHeight:1,opacity:idx===orderedHitos.length-1?.4:1}}>↓</button>
+                </div>
+                {/* Hito info */}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2,flexWrap:'wrap'}}>
+                    <span style={{fontSize:10,fontWeight:700,color:C.white,background:C.sub,
+                      padding:'1px 6px',borderRadius:10,fontFamily:C.font}}>#{idx+1}</span>
+                    <div style={{width:7,height:7,borderRadius:3.5,background:h.color,flexShrink:0}}/>
+                    <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
+                  </div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:C.head}}>{h.label}</div>
+                  <div style={{fontSize:12,color:C.sub,fontFamily:C.font}}>📅 Plan: {(()=>{const d=pDate(h.date);return d?mStr(d.y,d.m):'—';})()}</div>
+                  {/* Date projections */}
+                  <div style={{marginTop:5,display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {theo&&<div style={{background:C.primaryL,borderRadius:7,padding:'4px 9px',display:'inline-flex',flexDirection:'column',alignItems:'center'}}>
+                      <span style={{fontSize:9,color:C.primary,fontFamily:C.font,fontWeight:700,textTransform:'uppercase',letterSpacing:.5}}>Teórico</span>
+                      <span style={{fontSize:13,fontWeight:700,color:C.primary,fontFamily:C.head}}>{mStr(theo.y,theo.m)}</span>
+                    </div>}
+                    {hasRealSavings&&real&&<div style={{background:delay>0?C.dangerL:C.successL,borderRadius:7,padding:'4px 9px',display:'inline-flex',flexDirection:'column',alignItems:'center'}}>
+                      <span style={{fontSize:9,color:delay>0?C.danger:C.success,fontFamily:C.font,fontWeight:700,textTransform:'uppercase',letterSpacing:.5}}>Real</span>
+                      <span style={{fontSize:13,fontWeight:700,color:delay>0?C.danger:C.success,fontFamily:C.head}}>{mStr(real.y,real.m)}</span>
+                      {delay>0&&<span style={{fontSize:10,color:C.danger,fontFamily:C.font,fontWeight:700}}>+{delay}m</span>}
+                      {delay<=0&&<span style={{fontSize:10,color:C.success,fontFamily:C.font}}>✓</span>}
+                    </div>}
+                  </div>
+                </div>
+                {/* Amount */}
+                <div style={{textAlign:'right',flexShrink:0}}>
+                  <div style={{fontSize:15,fontWeight:700,color:h.color,fontFamily:C.head}}>{fUSD(h.usd)}</div>
+                  <div style={{fontSize:10,color:C.muted,fontFamily:C.font}}>USD</div>
+                </div>
               </div>
-              <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font}}>{h.label}</div>
-              <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:1}}>
-                Base: {base?mStr(base.y,base.m):'—'}
-                {hasScenario&&scen&&<span style={{marginLeft:8,color:diff>0?C.success:C.sub,fontWeight:diff>0?700:400}}>
-                  → {mStr(scen.y,scen.m)}{diff>0?<span style={{color:C.success}}> ({diff}m antes)</span>:null}
-                </span>}
+            </div>;
+          })
+        )}
+      </Card>
+    </div>}
+
+    {/* ── EXTRA SAVINGS TAB ── */}
+    {tab2==='extra'&&<div>
+      <Card style={{marginTop:10}}>
+        <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:12,fontFamily:C.font}}>
+          Simular ahorro adicional
+        </div>
+        <Field label="Ahorro extra por mes (USD)" sub="Adicional a tu capacidad actual">
+          <input type="number" value={extraMonthly} onChange={e=>setExtraMonthly(e.target.value)} placeholder="0" style={iSt}/>
+        </Field>
+        <Field label="Por cuántos meses">
+          <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6,marginBottom:6}}>
+            {[3,6,12,24,'∞'].map(v=>(
+              <button key={v} onClick={()=>setExtraMonths(v==='∞'?'999':String(v))}
+                style={{padding:'8px 4px',borderRadius:8,border:`1.5px solid ${(v==='∞'?nExtra>=999:nExtra===v)?C.primary:C.border}`,
+                background:(v==='∞'?nExtra>=999:nExtra===v)?C.primaryL:C.white,
+                color:(v==='∞'?nExtra>=999:nExtra===v)?C.primary:C.sub,
+                fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:C.font}}>
+                {v}{v!=='∞'&&'m'}
+              </button>
+            ))}
+          </div>
+          <input type="number" value={extraMonths} onChange={e=>setExtraMonths(e.target.value)} placeholder="3" style={{...iSt,fontSize:13}}/>
+        </Field>
+        <Field label="Pago único ahora (USD)" sub="Ej: bono, venta de activo">
+          <input type="number" value={oneTime} onChange={e=>setOneTime(e.target.value)} placeholder="0" style={iSt}/>
+        </Field>
+        {hasScenario&&saving>0&&(
+          <div style={{background:C.successL,borderRadius:10,padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center',border:`1.5px solid ${C.success}33`,marginTop:8}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:C.success,fontFamily:C.font}}>✅ Te ahorrás {saving} meses</div>
+              <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:2}}>
+                Base: {baseComp?mStr(baseComp.y,baseComp.m):'—'} → Escenario: {scenComp?mStr(scenComp.y,scenComp.m):'—'}
               </div>
             </div>
-            <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.head,flexShrink:0}}>{fUSD(h.usd)}</div>
-          </div>;
-        })}
-        {pendHitos.length>12&&<div style={{fontSize:11,color:C.muted,fontFamily:C.font,textAlign:'center',paddingTop:6}}>
-          +{pendHitos.length-12} hitos más
-        </div>}
+            <div style={{fontSize:24,fontWeight:700,color:C.success,fontFamily:C.head}}>{saving}m</div>
+          </div>
+        )}
       </Card>
-    )}
-    {/* Proyección dentro de Escenarios */}
+
+      {orderedHitos.length>0&&(
+        <Card>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
+            Impacto en cada hito
+          </div>
+          {orderedHitos.map((h,i)=>{
+            const base=realDates[h.id],scen=scenarioDates[h.id];
+            const diff=base&&scen?Math.max(0,mDiff(scen.y,scen.m,base.y,base.m)):0;
+            return<div key={h.id} style={{padding:'9px 0',borderBottom:`1px solid ${C.border2}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                  <span style={{fontSize:10,fontWeight:700,color:C.muted,fontFamily:C.font}}>#{i+1}</span>
+                  <div style={{width:7,height:7,borderRadius:3.5,background:h.color,flexShrink:0}}/>
+                  <span style={{fontSize:11,color:C.sub,fontFamily:C.font}}>{h.propName}</span>
+                </div>
+                <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.font}}>{h.label}</div>
+                <div style={{fontSize:11,color:C.sub,fontFamily:C.font,marginTop:1}}>
+                  Base: {base?mStr(base.y,base.m):'—'}
+                  {hasScenario&&scen&&<span style={{marginLeft:8,color:diff>0?C.success:C.sub,fontWeight:diff>0?700:400}}>
+                    → {mStr(scen.y,scen.m)}{diff>0&&<span style={{color:C.success}}> ({diff}m antes)</span>}
+                  </span>}
+                </div>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.head,flexShrink:0}}>{fUSD(h.usd)}</div>
+            </div>;
+          })}
+        </Card>
+      )}
+    </div>}
+
     <Card>
       <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10,fontFamily:C.font}}>
         📈 Curva de ahorro acumulado
@@ -2082,7 +2205,6 @@ function EscenariosTab({data,metrics}){
 }
 
 
-// ─── PROYECCIÓN MINI (for Escenarios tab) ────────
 function ProyeccionMini({data,metrics}){
   const{realTotal,thTotal,savGap,comp,nY,nM,pIds}=metrics;
   const chartPts=useMemo(()=>{
@@ -2432,6 +2554,10 @@ function App(){
     e.target.value=''; // reset file input
   },[]);
 
+  const saveScenarioOrder=useCallback(order=>{
+    setData(d=>({...d,scenarioOrder:order}));
+  },[]);
+
   const resetAll=useCallback(()=>{
     setConfirmData({
       msg:'¿Reiniciar la app? Se borrarán ahorros registrados, pagos manuales, planes de cuotas y overrides de capacidad. Las propiedades e hitos base se conservan.',
@@ -2484,7 +2610,7 @@ function App(){
     {tab==='propiedades' &&<PropiedadesTab data={data} onChangeStatus={changeStatus} onEditProp={openEditProp} onEditHito={openEditHito} onAddHito={openAddHito} onRemoveHito={removeHito} onDeleteProp={deleteProp} onNewProp={openNewProp} onUnmark={unmarkPaid} onSetupInstallment={openSetupInstallment}/>}
     {tab==='plan'        &&<PlanTab data={data} metrics={metrics} paymentDates={paymentDates} planFilter={planFilter} setPlanFilter={setPlanFilter} onMarkPaid={openMarkPaid} onUnmark={unmarkPaid} onMoveHito={moveHito} onEditHitoFromPlan={openEditHitoFromPlan}/>}
     {tab==='historial'   &&<HistorialTab data={data} metrics={metrics}/>}
-    {tab==='escenarios'  &&<EscenariosTab data={data} metrics={metrics}/>}
+    {tab==='escenarios'  &&<EscenariosTab data={data} metrics={metrics} onSaveScenarioOrder={saveScenarioOrder}/>}
     {tab==='proyeccion'  &&<ProyeccionTab data={data} metrics={metrics}/>}
 
     {modal==='manual'   &&<ManualModal onClose={()=>setModal(null)}/>}
